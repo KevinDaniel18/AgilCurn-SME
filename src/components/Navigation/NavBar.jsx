@@ -12,7 +12,6 @@ const Tab = createBottomTabNavigator();
 
 const Navbar = () => {
   return (
-    <NavigationContainer>
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{
@@ -21,7 +20,7 @@ const Navbar = () => {
         }}
       >
         <Tab.Screen
-          name="Home"
+          name="Dashboard"
           component={HomeScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
@@ -57,7 +56,6 @@ const Navbar = () => {
           }}
         />
       </Tab.Navigator>
-    </NavigationContainer>
   );
 };
 

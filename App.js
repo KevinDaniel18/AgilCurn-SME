@@ -1,11 +1,11 @@
 import Header from "./src/components/Header";
-import NavBar from "./src/components/Navigation/NavBar";
 import { View, StyleSheet } from "react-native";
+import ProjectNavigation from "./src/components/Navigation/ProjectNavigation";
 export default function App() {
   return (
     <View style={styles.container}>
       <Header />
-      <NavBar />
+      <ProjectNavigation/>
     </View>
   );
 }
