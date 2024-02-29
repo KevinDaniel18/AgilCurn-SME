@@ -1,4 +1,4 @@
-/*import React from "react";
+import React from "react";
 import { View, Text } from "react-native";
 
 const CreateProjects = () => {
@@ -9,4 +9,4 @@ const CreateProjects = () => {
   );
 };
 
-export default CreateProjects;*/
+export default CreateProjects;

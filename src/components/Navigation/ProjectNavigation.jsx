@@ -1,4 +1,4 @@
-/*import React from "react";
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import ProjectsScreen from "../components/ProjectsScreen";
@@ -17,4 +17,4 @@ const ProjectNavigation = () => {
   );
 };
 
-export default ProjectNavigation;*/
+export default ProjectNavigation;
