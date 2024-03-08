@@ -1,12 +1,21 @@
-import React from 'react'
-import { View, Text } from 'react-native'
+import React from "react";
+import { View, Text} from "react-native";
+import { useProject } from "./StoreProjects/ProjectContext";
 
 const HomeScreen = () => {
+  const { projects } = useProject();
+
   return (
     <View>
-        <Text>Home screeen</Text>
+      <Text>Projects:</Text>
+      {projects.map((project, index) => (
+        <View key={index}>
+          <Text>{project.projectName}</Text>
+          <Text>{project.endDate.toLocaleString()}</Text>
+        </View>
+      ))}
     </View>
-  )
-}
+  );
+};
 
-export default HomeScreen
+export default HomeScreen;
