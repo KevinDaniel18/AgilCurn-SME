@@ -1,13 +1,26 @@
 import React from "react";
-import { StyleSheet, Text, View, Platform } from "react-native";
-import { Ionicons } from '@expo/vector-icons';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Platform,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-export default function Header() {
+function Header({ navigation }) {
   return (
     <View>
       <View style={styles.header}>
         <Text style={styles.title}>AgilCurn SME</Text>
-        <Ionicons name="chatbox-outline" size={28} color="black" style={{marginRight: 20}}/>
+        <TouchableOpacity onPress={() => navigation.navigate("MessageScreen")}>
+          <Ionicons
+            name="chatbox-outline"
+            size={28}
+            color="black"
+            style={{ marginRight: 20 }}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -41,3 +54,5 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
 });
+
+export default Header;

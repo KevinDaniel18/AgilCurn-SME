@@ -7,7 +7,7 @@ import {
   Modal,
   TouchableOpacity,
 } from "react-native";
-import { useProject } from "./StoreProjects/ProjectContext";
+import { useProject } from "../StoreProjects/ProjectContext";
 
 const ProjectsScreen = ({ navigation }) => {
   const { projects, deleteProject } = useProject();
