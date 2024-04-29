@@ -16,6 +16,7 @@ const RegisterScreen = ({ navigation }) => {
     repeatPassword: "",
   });
 
+  //get inputs values
   const getInput = (name, value) => {
     setUserData((prevValue) => ({ ...prevValue, [name]: value }));
   };
@@ -24,6 +25,7 @@ const RegisterScreen = ({ navigation }) => {
     try {
       const { fullname, email, password, repeatPassword } = userData;
 
+      //validations
       if (!fullname.trim()) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
@@ -34,7 +36,6 @@ const RegisterScreen = ({ navigation }) => {
         return;
       }
 
-      // Validar correo electrónico
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         Dialog.show({
@@ -46,7 +47,6 @@ const RegisterScreen = ({ navigation }) => {
         return;
       }
 
-      // Validar contraseña
       if (password.length < 6) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
@@ -57,7 +57,6 @@ const RegisterScreen = ({ navigation }) => {
         return;
       }
 
-      // Verificar si las contraseñas coinciden
       if (password !== repeatPassword) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
@@ -68,17 +67,20 @@ const RegisterScreen = ({ navigation }) => {
         return;
       }
 
+      //post an user
       await postUser(userData);
 
       Toast.show({
         type: "success",
         text1: "Éxito!",
         text2: "Datos registrados, ahora puedes iniciar sesión",
-        visibilityTime: 4000, // Tiempo de visibilidad de la notificación en milisegundos
+        visibilityTime: 4000,
         autoHide: true,
       });
 
-      navigation.navigate("Login");
+      setTimeout(() => {
+        navigation.navigate("Login");
+      }, 4000);
     } catch (error) {
       Toast.show({
         type: "error",
@@ -89,11 +91,6 @@ const RegisterScreen = ({ navigation }) => {
       });
       console.error("error", error);
     }
-
-    // Si la validación es exitosa, navegar a la pantalla de inicio de sesión
-
-    // Navegar a la pantalla de inicio de sesión después de mostrar la notificación
-    //setTimeout(() => {}, 2000); // Espera 2 segundos antes de navegar
   };
 
   return (
@@ -140,17 +137,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff", // Cambiar color de fondo a blanco
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 24,
     marginBottom: 20,
-    fontWeight: "bold", // Añadir negrita al título
+    fontWeight: "bold",
   },
   input: {
     width: "80%",
     height: 40,
-    borderColor: "#ccc", // Cambiar color del borde a gris claro
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 10,

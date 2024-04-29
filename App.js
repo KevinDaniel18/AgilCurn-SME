@@ -12,15 +12,13 @@ const Stack = createStackNavigator();
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   return (
     <ProjectProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {isLoggedIn ? (
-            <Stack.Screen
-              name="Root"
-              component={Root}
-            />
+            <Stack.Screen name="Root" component={Root} />
           ) : (
             <>
               <Stack.Screen name="Login">
@@ -45,6 +43,7 @@ const Root = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

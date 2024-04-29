@@ -7,14 +7,51 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import Toast from "react-native-toast-message";
+import { loginUser } from "../../api/endpoint";
 
 const LoginScreen = ({ setIsLoggedIn, navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    // Aquí actualizamos el estado isLoggedIn a true
-    setIsLoggedIn(true);
+  const handleLogin = async () => {
+    try {
+      if (!email.trim() || !password.trim()) {
+        Toast.show({
+          type: "error",
+          text1: "Campos vacios",
+          text2: "Por favor ingresa tus datos",
+          visibilityTime: 4000,
+          autoHide: true,
+        });
+        return;
+      }
+      const response = await loginUser(email, password);
+      console.log(response);
+
+      if (response.result && response.result.token) {
+        setIsLoggedIn(true);
+        Toast.show({
+          type: "success",
+          text1: "Hola!",
+          text2: "Bienvenido",
+          visibilityTime: 10000,
+          autoHide: true,
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Inicio de sesión fallido",
+          text2: "Por favor revisa tus credenciales",
+          visibilityTime: 4000,
+          autoHide: true,
+        });
+      }
+      
+    } catch (error) {
+      console.error("error", error);
+      console.log(error.response);
+    }
   };
 
   const navigateToRegister = () => {
@@ -43,6 +80,7 @@ const LoginScreen = ({ setIsLoggedIn, navigation }) => {
           ¿No tienes cuenta? Regístrate aquí
         </Text>
       </TouchableOpacity>
+      <Toast />
     </View>
   );
 };

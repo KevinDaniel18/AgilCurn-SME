@@ -6,6 +6,7 @@ import HomeScreen from "../Screens/HomeScreen"
 import ProjectsScreen from "../Screens/ProjectsScreen";
 import TasksScreen from "../Screens/TasksScreen";
 import BoardScreen from "../Screens/BoardScreen";
+import SettingsScreen from "../Screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -54,6 +55,15 @@ const Navbar = () => {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="clipboard" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" color={color} size={size} />
           ),
         }}
       />
