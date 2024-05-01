@@ -7,6 +7,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import Header from "./src/components/Header";
 import LoginScreen from "./src/components/Screens/LoginScreen";
 import RegisterScreen from "./src/components/Screens/RegisterScreen";
+import Forgot from "./src/components/Screens/Forgot";
 
 const Stack = createStackNavigator();
 
@@ -27,6 +28,7 @@ export default function App() {
                 )}
               </Stack.Screen>
               <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ForgotPass" component={Forgot} />
             </>
           )}
         </Stack.Navigator>

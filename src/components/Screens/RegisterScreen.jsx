@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import {
   ALERT_TYPE,
   Dialog,
@@ -29,8 +36,8 @@ const RegisterScreen = ({ navigation }) => {
       if (!fullname.trim()) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
-          title: "Nombre completo requerido",
-          textBody: "Por favor ingresa tu nombre completo.",
+          title: "Full name required",
+          textBody: "Please enter your full name.",
           button: "close",
         });
         return;
@@ -40,8 +47,8 @@ const RegisterScreen = ({ navigation }) => {
       if (!emailRegex.test(email)) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
-          title: "Correo electrónico inválido",
-          textBody: "Por favor ingresa un correo electrónico válido.",
+          title: "Invalid email",
+          textBody: "Por favor ingresa un correo electrónico válido. Example: user@gmail.com ",
           button: "close",
         });
         return;
@@ -50,8 +57,8 @@ const RegisterScreen = ({ navigation }) => {
       if (password.length < 6) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
-          title: "Contraseña inválida",
-          textBody: "La contraseña debe tener al menos 6 caracteres.",
+          title: "Invalid password",
+          textBody: "The password must be at least 6 characters.",
           button: "close",
         });
         return;
@@ -60,8 +67,8 @@ const RegisterScreen = ({ navigation }) => {
       if (password !== repeatPassword) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
-          title: "Contraseñas no coinciden",
-          textBody: "Por favor asegúrate de que las contraseñas coincidan.",
+          title: "Passwords do not match",
+          textBody: "Please make sure the passwords match.",
           button: "close",
         });
         return;
@@ -72,8 +79,8 @@ const RegisterScreen = ({ navigation }) => {
 
       Toast.show({
         type: "success",
-        text1: "Éxito!",
-        text2: "Datos registrados, ahora puedes iniciar sesión",
+        text1: "Succes!",
+        text2: "Data registered, now you can log in",
         visibilityTime: 4000,
         autoHide: true,
       });
@@ -82,50 +89,75 @@ const RegisterScreen = ({ navigation }) => {
         navigation.navigate("Login");
       }, 4000);
     } catch (error) {
+      
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: error.message,
+        text1: error.message,
+        text2: "Email already exist",
         visibilityTime: 4000,
         autoHide: true,
       });
-      console.error("error", error);
     }
+  };
+
+  const navigateToLogin = () => {
+    navigation.navigate("Login");
   };
 
   return (
     <AlertNotificationRoot>
       <View style={styles.container}>
-        <Text style={styles.title}>Registro</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nombre completo"
-          onChangeText={(text) => getInput("fullname", text)}
-          value={userData.fullname}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Correo electrónico"
-          onChangeText={(text) => getInput("email", text)}
-          value={userData.email}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          onChangeText={(text) => getInput("password", text)}
-          value={userData.password}
-          secureTextEntry
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Repetir Contraseña"
-          onChangeText={(text) => getInput("repeatPassword", text)}
-          value={userData.repeatPassword}
-          secureTextEntry
-        />
-        <Button title="Registrar" onPress={handleRegister} />
+        <Text style={styles.title}>Register</Text>
+
+        <View style={styles.inputView}>
+          <TextInput
+            style={styles.input}
+            placeholder="Fullname"
+            onChangeText={(text) => getInput("fullname", text)}
+            value={userData.fullname}
+          />
+        </View>
+
+        <View style={styles.inputView}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            onChangeText={(text) => getInput("email", text)}
+            value={userData.email}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+
+        <View style={styles.inputView}>
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            onChangeText={(text) => getInput("password", text)}
+            value={userData.password}
+            secureTextEntry
+          />
+        </View>
+
+        <View style={styles.inputView}>
+          <TextInput
+            style={styles.input}
+            placeholder="Repeat password"
+            onChangeText={(text) => getInput("repeatPassword", text)}
+            value={userData.repeatPassword}
+            secureTextEntry
+          />
+        </View>
+        <View style={styles.actionContainer}>
+          <Button
+            title="REGISTER"
+            style={styles.registerButton}
+            onPress={handleRegister}
+          />
+          <TouchableOpacity onPress={navigateToLogin}>
+            <Text style={styles.loginText}>Do you already have an account? Get into</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <Toast />
     </AlertNotificationRoot>
@@ -135,23 +167,35 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: 30,
     fontWeight: "bold",
+    marginBottom: 20,
   },
-  input: {
+  inputView: {
     width: "80%",
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 25,
+    padding: 15,
     marginBottom: 10,
-    paddingHorizontal: 10,
+  },
+  registerButton: {
+    width: "100%",
+    backgroundColor: "#4caf50",
+    borderRadius: 25,
+    padding: 15,
+  },
+  loginText: {
+    color: "#29374a",
+    textDecorationLine: "underline",
+    marginTop: 15,
+  },
+  actionContainer: {
+    marginTop: 60,
   },
 });
 
