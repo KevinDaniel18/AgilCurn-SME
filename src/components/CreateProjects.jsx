@@ -113,7 +113,7 @@ const CreateProjects = () => {
         </View>
         <View style={styles.buttonContainer}>
           <Button
-            title="Select an end date"s
+            title="Select an end date"
             onPress={() => handleDateSelection("end")}
             color="#ff6b6b"
           />

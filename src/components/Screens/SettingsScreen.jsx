@@ -8,18 +8,35 @@ import {
   Animated,
   Text,
 } from "react-native";
-import { deleteAccount } from "../../api/endpoint";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
+import { deleteAccountByEmailAndPassword } from "../../api/endpoint";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SettingsScreen = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [token, setToken] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
   const handleLogout = () => {
     alert("Going to login");
   };
+
+  useEffect(() => {
+    const getToken = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem("token");
+        setToken(storedToken);
+      } catch (error) {
+        console.error("Error retrieving token:", error);
+      }
+    };
+
+    getToken();
+  }, []);
 
   useEffect(() => {
     if (isModalVisible) {
@@ -42,28 +59,30 @@ const SettingsScreen = () => {
     fadeAnim.setValue(1);
   };
 
-  const handleSubmit = async() => {
-  try {
-    if (!email.trim() || !password.trim()) {
-      Toast.show({
-        type: "info",
-        text1: "empty fields",
-        text2: "Please enter your information",
-        visibilityTime: 4000,
-        autoHide: true,
-      });
-      return;
+  const handleSubmit = async () => {
+    try {
+      if (!email.trim() || !password.trim()) {
+        Toast.show({
+          type: "info",
+          text1: "empty fields",
+          text2: "Please enter your information",
+          visibilityTime: 4000,
+          autoHide: true,
+        });
+        return;
+      }
+
+      const res = await deleteAccountByEmailAndPassword(email, password, token);
+      if (res && res.message === "Invalid token or token missing") {
+        setError("This is not your account");
+        setShowErrorModal(true);
+      } else {
+        setIsModalVisible(false);
+      }
+    } catch (error) {
+      console.log("error", error);
+      setShowErrorModal(true);
     }
-    await deleteAccount(email, password)
-  } catch (error) {
-    Toast.show({
-      type: "error",
-      text1: "Failed to delete",
-      text2: error.message,
-      visibilityTime: 4000,
-      autoHide: true,
-    });
-  }
     setIsModalVisible(false);
     // Restablece los valores de los campos de entrada
     setEmail("");
@@ -71,6 +90,11 @@ const SettingsScreen = () => {
   };
 
   const onRequestClose = () => {
+    setIsModalVisible(false);
+    setShowErrorModal(false);
+  };
+
+  const handleCloseModal = () => {
     setIsModalVisible(false);
   };
 
@@ -91,21 +115,37 @@ const SettingsScreen = () => {
             <Text>Enter your email and password to delete your account</Text>
             <TextInput
               style={styles.input}
-              placeholder="Correo electrónico"
+              placeholder="Email"
               value={email}
               onChangeText={(text) => setEmail(text)}
             />
             <TextInput
               style={styles.input}
-              placeholder="Contraseña"
+              placeholder="Password"
               secureTextEntry={true}
               value={password}
               onChangeText={(text) => setPassword(text)}
             />
-            <Button title="Eliminar cuenta" onPress={handleSubmit} />
+            <View style={styles.buttonContent}>
+              <Button title="Cancel" onPress={handleCloseModal} />
+              <Button title="Delete Account" onPress={handleSubmit} color="#ff6b6b" />
+            </View>
           </Animated.View>
         </View>
-      <Toast/>
+        <Toast />
+      </Modal>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showErrorModal}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text>{error}</Text>
+            <Button title="OK" onPress={() => setShowErrorModal(false)} />
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -141,6 +181,12 @@ const styles = StyleSheet.create({
     borderColor: "gray",
     borderRadius: 5,
     paddingHorizontal: 10,
+  },
+  buttonContent: {
+    flexDirection: "row", // Esto hace que los elementos dentro del View se distribuyan horizontalmente
+    marginTop: 20,
+    justifyContent: "space-around", // Esto distribuye los elementos equitativamente a lo largo del eje principal (horizontalmente)
+    width: "100%", // E
   },
 });
 
