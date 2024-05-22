@@ -4,7 +4,7 @@ import { useProject } from "../StoreProjects/ProjectContext";
 import * as Progress from "react-native-progress";
 
 const HomeScreen = () => {
-  const { projects } = useProject();
+  const { projects, invitedUserName } = useProject();
 
   const calculateProgress = (startDate, endDate) => {
     const currentDate = new Date();
@@ -15,7 +15,7 @@ const HomeScreen = () => {
     );
     const progress = (elapsedTime / totalTime) * 100;
     console.log(progress);
-    return Math.min(progress, 100); 
+    return Math.min(progress, 100);
   };
 
   return (
@@ -33,14 +33,19 @@ const HomeScreen = () => {
           </Text>
 
           <Progress.Bar
-            progress={calculateProgress(new Date(), project.endDate) / 100} 
+            progress={calculateProgress(new Date(), project.endDate) / 100}
             width={300}
-            color="#007AFF" 
-            unfilledColor="#dddddd" 
-            borderColor="transparent" 
-            borderRadius={5} 
+            color="#007AFF"
+            unfilledColor="#dddddd"
+            borderColor="transparent"
+            borderRadius={5}
             height={20}
           />
+          {invitedUserName && (
+            <Text style={styles.invitedUserName}>
+              Participants: {invitedUserName}
+            </Text>
+          )}
         </View>
       ))}
     </ScrollView>
@@ -76,6 +81,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666666",
     marginBottom: 10,
+  },
+  invitedUserName: {
+    fontSize: 14,
+    color: "#666666",
+    marginTop: 10,
   },
 });
 

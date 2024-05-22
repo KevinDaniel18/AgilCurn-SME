@@ -5,6 +5,7 @@ const ProjectContext = createContext();
 
 export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
+  const [invitedUserName, setInvitedUserName] = useState("");
 
   useEffect(() => {
     loadProjectsFromStorage();
@@ -12,18 +13,20 @@ export const ProjectProvider = ({ children }) => {
 
   const loadProjectsFromStorage = async () => {
     try {
-      const storedProjects = await AsyncStorage.getItem('projects');
+      const storedProjects = await AsyncStorage.getItem("projects");
       if (storedProjects) {
         const parsedProjects = JSON.parse(storedProjects);
-        const updatedProjects = parsedProjects.map(project => ({
+        const updatedProjects = parsedProjects.map((project) => ({
           ...project,
           endDate: project.endDate ? new Date(project.endDate) : new Date(),
-          startDate: project.startDate ? new Date(project.startDate) : new Date()
+          startDate: project.startDate
+            ? new Date(project.startDate)
+            : new Date(),
         }));
         setProjects(updatedProjects);
       }
     } catch (error) {
-      console.error('Error loading projects from AsyncStorage:', error);
+      console.error("Error loading projects from AsyncStorage:", error);
     }
   };
 
@@ -41,6 +44,10 @@ export const ProjectProvider = ({ children }) => {
     saveProjectsToStorage(updatedProjects);
   };
 
+  const updateInvitedUserName = (name) => {
+    setInvitedUserName(name);
+  };
+
   const deleteProject = (index) => {
     const updatedProjects = [...projects];
     updatedProjects.splice(index, 1);
@@ -49,7 +56,15 @@ export const ProjectProvider = ({ children }) => {
   };
 
   return (
-    <ProjectContext.Provider value={{ projects, addProject, deleteProject }}>
+    <ProjectContext.Provider
+      value={{
+        projects,
+        addProject,
+        deleteProject,
+        invitedUserName,
+        updateInvitedUserName,
+      }}
+    >
       {children}
     </ProjectContext.Provider>
   );

@@ -7,7 +7,7 @@ import {
   FlatList,
   StyleSheet,
 } from "react-native";
-import { Feather } from "@expo/vector-icons"; // Importar Feather desde react-native-vector-icons
+import { Feather } from "@expo/vector-icons";
 
 const TasksScreen = () => {
   const [task, setTask] = useState("");

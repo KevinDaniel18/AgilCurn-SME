@@ -11,6 +11,7 @@ import {
 import { Toast } from "react-native-toast-message/lib/src/Toast";
 import { deleteAccountByEmailAndPassword } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../AuthContext/AuthContext";
 
 const SettingsScreen = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -20,9 +21,27 @@ const SettingsScreen = () => {
   const [token, setToken] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const fadeAnim = new Animated.Value(0);
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    alert("Going to login");
+  useEffect(() => {
+    const getToken = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem("token");
+        setToken(storedToken);
+      } catch (error) {
+        console.error("Error retrieving token:", error);
+      }
+    };
+    getToken();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("token");
+      logout()
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   useEffect(() => {
@@ -78,13 +97,13 @@ const SettingsScreen = () => {
         setShowErrorModal(true);
       } else {
         setIsModalVisible(false);
+        logout()
       }
     } catch (error) {
       console.log("error", error);
       setShowErrorModal(true);
     }
     setIsModalVisible(false);
-    // Restablece los valores de los campos de entrada
     setEmail("");
     setPassword("");
   };
@@ -128,7 +147,11 @@ const SettingsScreen = () => {
             />
             <View style={styles.buttonContent}>
               <Button title="Cancel" onPress={handleCloseModal} />
-              <Button title="Delete Account" onPress={handleSubmit} color="#ff6b6b" />
+              <Button
+                title="Delete Account"
+                onPress={handleSubmit}
+                color="#ff6b6b"
+              />
             </View>
           </Animated.View>
         </View>

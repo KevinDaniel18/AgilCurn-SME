@@ -1,18 +1,17 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-
-import HomeScreen from "../Screens/HomeScreen"
+import { TouchableOpacity } from "react-native";
+import HomeScreen from "../Screens/HomeScreen";
 import ProjectsScreen from "../Screens/ProjectsScreen";
 import TasksScreen from "../Screens/TasksScreen";
 import BoardScreen from "../Screens/BoardScreen";
 import SettingsScreen from "../Screens/SettingsScreen";
+import UsersScreen from "../Screens/UsersScreen";
 
 const Tab = createBottomTabNavigator();
 
-
-
-const Navbar = () => {
+const Navbar = ({ navigation }) => {
   return (
     <Tab.Navigator
       initialRouteName="HeaderNav"
@@ -21,11 +20,23 @@ const Navbar = () => {
         tabBarInactiveTintColor: "gray",
       }}
     >
-    
       <Tab.Screen
         name="Dashboard"
         component={HomeScreen}
         options={{
+          title: "agilCurn",
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MessageScreen")}
+            >
+              <Ionicons
+                name="chatbox-outline"
+                size={28}
+                color="black"
+                style={{ marginRight: 20 }}
+              />
+            </TouchableOpacity>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" color={color} size={size} />
           ),
@@ -61,6 +72,15 @@ const Navbar = () => {
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="UsersScreen"
+        component={UsersScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings" color={color} size={size} />

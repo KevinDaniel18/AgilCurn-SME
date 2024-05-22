@@ -10,8 +10,10 @@ import {
 import Toast from "react-native-toast-message";
 import { loginUser } from "../../api/endpoint";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../AuthContext/AuthContext";
 
-const LoginScreen = ({ setIsLoggedIn, navigation }) => {
+const LoginScreen = ({ navigation }) => {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -33,14 +35,7 @@ const LoginScreen = ({ setIsLoggedIn, navigation }) => {
       console.log(response);
 
       if (response.result && response.result.token) {
-        setIsLoggedIn(true);
-        Toast.show({
-          type: "success",
-          text1: "Hola!",
-          text2: "Bienvenido",
-          visibilityTime: 10000,
-          autoHide: true,
-        });
+        login(response.result.token);
       } else {
         Toast.show({
           type: "error",

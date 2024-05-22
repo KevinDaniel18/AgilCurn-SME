@@ -65,7 +65,7 @@ const Forgot = ({ navigation }) => {
     }
   };
   function backToLogin() {
-    navigation.navigate("Login");
+    navigation.navigate("AuthFlow", {screen: "Login"});
   }
   return (
     <View style={styles.container}>

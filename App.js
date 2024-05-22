@@ -1,53 +1,54 @@
-import { View, StyleSheet } from "react-native";
 import React, { useState } from "react";
 import ProjectNavigation from "./src/components/Navigation/ProjectNavigation";
 import { ProjectProvider } from "./src/components/StoreProjects/ProjectContext";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import Header from "./src/components/Header";
 import LoginScreen from "./src/components/Screens/LoginScreen";
 import RegisterScreen from "./src/components/Screens/RegisterScreen";
 import Forgot from "./src/components/Screens/Forgot";
+import SettingsScreen from "./src/components/Screens/SettingsScreen";
+import {
+  AuthProvider,
+  useAuth,
+} from "./src/components/AuthContext/AuthContext";
 
 const Stack = createStackNavigator();
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   return (
-    <ProjectProvider>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {isLoggedIn ? (
-            <Stack.Screen name="Root" component={Root} />
-          ) : (
-            <>
-              <Stack.Screen name="Login">
-                {(props) => (
-                  <LoginScreen {...props} setIsLoggedIn={setIsLoggedIn} />
-                )}
-              </Stack.Screen>
-              <Stack.Screen name="Register" component={RegisterScreen} />
-              <Stack.Screen name="ForgotPass" component={Forgot} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </ProjectProvider>
+    <AuthProvider>
+      <ProjectProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </ProjectProvider>
+    </AuthProvider>
   );
 }
 
-const Root = () => {
+const AppNavigator = () => {
+  const { isLoggedIn } = useAuth();
+
   return (
-    <View style={styles.container}>
-      <Header />
-      <ProjectNavigation />
-    </View>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {isLoggedIn ? (
+        <Stack.Screen name="Root" component={ProjectNavigation} />
+      ) : (
+        <>
+          <Stack.Screen name="AuthFlow" component={AuthFlow} />
+        </>
+      )}
+    </Stack.Navigator>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
+const AuthFlow = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="ForgotPass" component={Forgot} />
+      <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+    </Stack.Navigator>
+  );
+};

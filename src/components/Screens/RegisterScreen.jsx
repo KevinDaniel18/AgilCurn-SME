@@ -86,7 +86,7 @@ const RegisterScreen = ({ navigation }) => {
       });
 
       setTimeout(() => {
-        navigation.navigate("Login");
+        navigation.navigate("AuthFlow", {screen: "Login"});
       }, 4000);
     } catch (error) {
       
@@ -101,7 +101,7 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   const navigateToLogin = () => {
-    navigation.navigate("Login");
+    navigation.navigate("AuthFlow", {screen: "Login"});
   };
 
   return (

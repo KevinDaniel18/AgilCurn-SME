@@ -55,3 +55,39 @@ export function getUser() {
   const res = axios.get("http://192.168.1.6:3000/api/v1/user");
   return res;
 }
+
+// export async function addMembers(email, projectName) {
+//   try {
+//     const response = await fetch(
+//       `http://192.168.1.6:3000/auth/search-by-email?email=${email}&projectName=${projectName}`,
+//       {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     if (!response.ok) {
+//       throw new Error("Failed to search user by email");
+//     }
+
+//     const data = await response.json();
+//     return data;
+//   } catch (error) {
+//     console.error("Error searching user by email:", error.message);
+//     throw error;
+//   }
+// }
+
+export function addMembers(emails, projectName) {
+  try {
+    return axios.post("http://192.168.1.6:3000/auth/invite-to-project", {
+      emails,
+      projectName,
+    });
+  } catch (error) {
+    console.error(error);
+    throw error
+  }
+}
