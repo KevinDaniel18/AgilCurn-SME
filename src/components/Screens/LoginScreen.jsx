@@ -132,8 +132,8 @@ const styles = StyleSheet.create({
   loginButton: {
     width: "100%",
     backgroundColor: "#4caf50",
-    borderRadius: 25,
-    padding: 15,
+    borderRadius: 10,
+    padding: 10,
   },
   forgotPasswordText: {
     fontSize: 12,

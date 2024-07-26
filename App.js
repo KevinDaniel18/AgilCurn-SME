@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import ProjectNavigation from "./src/components/Navigation/ProjectNavigation";
 import { ProjectProvider } from "./src/components/StoreProjects/ProjectContext";
 import { NavigationContainer } from "@react-navigation/native";

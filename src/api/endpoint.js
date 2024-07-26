@@ -1,19 +1,39 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const instance = axios.create({ baseURL: "http://192.168.1.17:3000" });
+
+const getAuthToken = async () => {
+  const token = await AsyncStorage.getItem("token");
+  return token ? `Bearer ${token}` : "";
+};
+
+instance.interceptors.request.use(
+  async (config) => {
+    const token = await getAuthToken();
+    if (token) {
+      config.headers.Authorization = token;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export function postUser(user) {
-  const res = axios.post("http://192.168.1.6:3000/auth/register", user);
-  return res;
+  return instance.post("/auth/register", user);
 }
 
 export async function loginUser(email, password) {
   try {
-    const res = await axios.post("http://192.168.1.6:3000/auth/login", {
+    const res = await instance.post("/auth/login", {
       email,
       password,
     });
-    const token = res.data.result.token;
+    const { token, userId, fullname } = res.data.result;
     await AsyncStorage.setItem("token", token);
+    await AsyncStorage.setItem("userId", userId.toString());
+    await AsyncStorage.setItem("userName", fullname.toString());
+    console.log("UserId stored:", userId);
     return res.data;
   } catch (error) {
     throw error;
@@ -26,68 +46,110 @@ export async function deleteAccountByEmailAndPassword(email, password, token) {
     if (token !== storedToken) {
       throw new Error("Unauthorized action. Token mismatch.");
     }
-    const response = await fetch(
-      "http://192.168.1.6:3000/auth/delete-by-email-password",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email, password }),
-      }
-    );
-    const data = await response.json();
-    return data;
+    const res = await instance.delete("/auth/delete-by-email-password", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: {
+        email,
+        password,
+      },
+    });
+    return res.data;
   } catch (error) {
     throw error;
   }
 }
 
 export function recoverPassword(email) {
-  const res = axios.post("http://192.168.1.6:3000/auth/forgot-password", {
-    email,
-  });
-  return res;
+  return instance.post("/auth/forgot-password", { email });
 }
 
 export function getUser() {
-  const res = axios.get("http://192.168.1.6:3000/api/v1/user");
-  return res;
+  return instance.get("/api/v1/user");
 }
 
-// export async function addMembers(email, projectName) {
-//   try {
-//     const response = await fetch(
-//       `http://192.168.1.6:3000/auth/search-by-email?email=${email}&projectName=${projectName}`,
-//       {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
+export function postProjects(projectName, startDate, endDate, creatorId) {
+  return instance.post("/projects", {
+    projectName,
+    startDate,
+    endDate,
+    creatorId,
+  });
+}
 
-//     if (!response.ok) {
-//       throw new Error("Failed to search user by email");
-//     }
+export function deleteProjectFromAPI(projectId) {
+  return instance.delete(`/projects/${projectId}`);
+}
 
-//     const data = await response.json();
-//     return data;
-//   } catch (error) {
-//     console.error("Error searching user by email:", error.message);
-//     throw error;
-//   }
-// }
+export function inviteUserToProjects(projectId, userId) {
+  return instance.post(`/projects/${projectId}/invite`, { userId });
+}
 
-export function addMembers(emails, projectName) {
-  try {
-    return axios.post("http://192.168.1.6:3000/auth/invite-to-project", {
-      emails,
-      projectName,
-    });
-  } catch (error) {
-    console.error(error);
-    throw error
-  }
+export function getUserProjects(userId) {
+  return instance.get(`/projects/user/${userId}`);
+}
+
+export function getInvitedUsers(projectId) {
+  return instance.get(`/projects/${projectId}/invited-users`);
+}
+
+export function getTasks(projectId, userId) {
+  return instance.get(`/tasks/project/${projectId}`, {
+    headers: {
+      Authorization: `Bearer ${userId}`,
+    },
+  });
+}
+
+export const getAllTasks = async () => {
+  return instance.get("/tasks");
+};
+
+export function postTasks(
+  title,
+  projectId,
+  description = "",
+  assigneeId = null,
+  creatorId
+) {
+  return instance.post(`/tasks`, {
+    title,
+    projectId,
+    description,
+    assigneeId,
+    creatorId,
+  });
+}
+
+export function deleteTasks(taskId) {
+  return instance.delete(`/tasks/${taskId}`);
+}
+
+export const updateTask = async (taskId, status) => {
+  const token = await AsyncStorage.getItem("token");
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  return instance.patch(`/tasks/${taskId}/status`, { status }, { headers });
+};
+
+export const userProfileImage = (userId, imageUrl) => {
+  return instance.put(`/api/v1/user/${userId}/profile-image`, { imageUrl });
+};
+
+export function getUserById(userId) {
+  return instance.get(`/api/v1/user/${userId}`);
+}
+
+export function loadImageFromApi(userId) {
+  return instance.get(`/api/v1/user/${userId}/profile-image`);
+}
+
+export function deleteChat(userId, contactId) {
+  return instance.post("/chat/deleteMessages", { userId, contactId });
 }

@@ -1,17 +1,46 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, Image } from "react-native";
 import HomeScreen from "../Screens/HomeScreen";
 import ProjectsScreen from "../Screens/ProjectsScreen";
 import TasksScreen from "../Screens/TasksScreen";
 import BoardScreen from "../Screens/BoardScreen";
-import SettingsScreen from "../Screens/SettingsScreen";
-import UsersScreen from "../Screens/UsersScreen";
+import { useProject } from "../StoreProjects/ProjectContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserById } from "../../api/endpoint";
 
 const Tab = createBottomTabNavigator();
 
 const Navbar = ({ navigation }) => {
+  const [localProfileImage, setLocalProfileImage] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const { profileImage } = useProject();
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const storedUserId = await AsyncStorage.getItem("userId");
+      setUserId(Number(storedUserId));
+    };
+
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    setLocalProfileImage(profileImage);
+  }, [profileImage]);
+
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      if (userId) {
+        const res = await getUserById(userId);
+        setLocalProfileImage(res.data.profileImage);
+      }
+    };
+
+    loadProfileImage();
+  }, [userId]);
+
   return (
     <Tab.Navigator
       initialRouteName="HeaderNav"
@@ -27,14 +56,30 @@ const Navbar = ({ navigation }) => {
           title: "agilCurn",
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => navigation.navigate("MessageScreen")}
+              onPress={() => {
+                navigation.navigate("Account");
+              }}
             >
-              <Ionicons
-                name="chatbox-outline"
-                size={28}
-                color="black"
-                style={{ marginRight: 20 }}
-              />
+              {localProfileImage ? (
+                <Image
+                  source={{
+                    uri: localProfileImage,
+                  }}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    marginRight: 20,
+                  }}
+                />
+              ) : (
+                <Ionicons
+                  name="person-circle-outline"
+                  size={28}
+                  color="black"
+                  style={{ marginRight: 20 }}
+                />
+              )}
             </TouchableOpacity>
           ),
           tabBarIcon: ({ color, size }) => (
@@ -69,24 +114,7 @@ const Navbar = ({ navigation }) => {
           ),
         }}
       />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="UsersScreen"
-        component={UsersScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" color={color} size={size} />
-          ),
-        }}
-      />
+      
     </Tab.Navigator>
   );
 };

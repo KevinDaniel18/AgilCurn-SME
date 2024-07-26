@@ -1,14 +1,22 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  deleteProjectFromAPI,
+  getUserById,
+  userProfileImage,
+} from "../../api/endpoint";
+import axios from "axios";
 
 const ProjectContext = createContext();
 
+
 export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
-  const [invitedUserName, setInvitedUserName] = useState("");
+  const [profileImage, setProfileImage] = useState(null);
 
   useEffect(() => {
     loadProjectsFromStorage();
+    loadProfileImageFromStorage();
   }, []);
 
   const loadProjectsFromStorage = async () => {
@@ -30,6 +38,25 @@ export const ProjectProvider = ({ children }) => {
     }
   };
 
+  const loadProfileImageFromStorage = async () => {
+    const userId = await AsyncStorage.getItem("userId");
+    if (userId) {
+      const res = await getUserById(userId);
+      setProfileImage(res.data.profileImage);
+    }
+  };
+
+  const saveProfileImageToStorage = async (imageUri) => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      //await AsyncStorage.setItem("profileImage", imageUri);
+      await userProfileImage(Number(userId), imageUri);
+      setProfileImage(imageUri);
+    } catch (error) {
+      console.error("Error saving profile image:", error);
+    }
+  };
+
   const saveProjectsToStorage = async (projectsToSave) => {
     try {
       await AsyncStorage.setItem("projects", JSON.stringify(projectsToSave));
@@ -38,21 +65,55 @@ export const ProjectProvider = ({ children }) => {
     }
   };
 
-  const addProject = (project) => {
+  const addProject = async (project) => {
+    if (!project.id) {
+      return;
+    }
+
     const updatedProjects = [...projects, project];
     setProjects(updatedProjects);
-    saveProjectsToStorage(updatedProjects);
+    await saveProjectsToStorage(updatedProjects);
   };
 
-  const updateInvitedUserName = (name) => {
-    setInvitedUserName(name);
+  const deleteProject = async (index) => {
+    try {
+      const projectToDelete = projects[index];
+
+      if (projectToDelete && projectToDelete.id) {
+        await deleteProjectFromAPI(projectToDelete.id);
+        const updatedProjects = projects.filter((_, i) => i !== index);
+        setProjects(updatedProjects);
+        saveProjectsToStorage(updatedProjects);
+      }
+    } catch (error) {
+      console.error(
+        "Error deleting project:",
+        error.response ? error.response.data : error.message
+      );
+    }
   };
 
-  const deleteProject = (index) => {
-    const updatedProjects = [...projects];
-    updatedProjects.splice(index, 1);
-    setProjects(updatedProjects);
-    saveProjectsToStorage(updatedProjects);
+  const leaveProject = async (projectId, userId) => {
+    try {
+      await axios.delete(
+        `http://192.168.1.17:3000/projects/${projectId}/leave`,
+        {
+          data: { userId },
+        }
+      );
+      const updatedProjects = projects.filter(
+        (project) => project.id !== projectId
+      );
+      setProjects(updatedProjects);
+      await saveProjectsToStorage(updatedProjects);
+    } catch (error) {
+      console.error("Error leaving project:", error);
+    }
+  };
+
+  const updateProfileImage = async(uri) => {
+    setProfileImage(uri);
+    saveProfileImageToStorage(uri);
   };
 
   return (
@@ -61,8 +122,10 @@ export const ProjectProvider = ({ children }) => {
         projects,
         addProject,
         deleteProject,
-        invitedUserName,
-        updateInvitedUserName,
+        setProjects,
+        leaveProject,
+        profileImage,
+        updateProfileImage,
       }}
     >
       {children}

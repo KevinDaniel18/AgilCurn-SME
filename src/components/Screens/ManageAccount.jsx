@@ -11,9 +11,8 @@ import {
 import { Toast } from "react-native-toast-message/lib/src/Toast";
 import { deleteAccountByEmailAndPassword } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuth } from "../AuthContext/AuthContext";
 
-const SettingsScreen = () => {
+const ManageAccount = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +20,6 @@ const SettingsScreen = () => {
   const [token, setToken] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const fadeAnim = new Animated.Value(0);
-  const { logout } = useAuth();
 
   useEffect(() => {
     const getToken = async () => {
@@ -34,16 +32,6 @@ const SettingsScreen = () => {
     };
     getToken();
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem("token");
-      await AsyncStorage.removeItem("userId");
-      logout()
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    }
-  };
 
   useEffect(() => {
     const getToken = async () => {
@@ -98,7 +86,7 @@ const SettingsScreen = () => {
         setShowErrorModal(true);
       } else {
         setIsModalVisible(false);
-        logout()
+        logout();
       }
     } catch (error) {
       console.log("error", error);
@@ -117,22 +105,11 @@ const SettingsScreen = () => {
   const handleCloseModal = () => {
     setIsModalVisible(false);
   };
-
-  function showToast(){
-    Toast.show({
-      type: "error",
-      text1: "Project not found",
-      text2: "Make sure you own or belong to a project",
-      autoHide: false,
-    });
-  }
-
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Button title="Salir" onPress={handleLogout} />
+      
       <Text>Delete Account</Text>
       <Button title="Delete Account" onPress={handleDeleteAccount} />
-      <Button title="Add Task" onPress={showToast} color="#007bff" />
 
       <Modal
         animationType="fade"
@@ -224,4 +201,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SettingsScreen;
+export default ManageAccount;
