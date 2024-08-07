@@ -96,7 +96,7 @@ export const ProjectProvider = ({ children }) => {
   const leaveProject = async (projectId, userId) => {
     try {
       await axios.delete(
-        `http://192.168.1.17:3000/projects/${projectId}/leave`,
+        `https://agilcurn-backend.onrender.com/projects/${projectId}/leave`,
         {
           data: { userId },
         }

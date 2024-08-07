@@ -33,12 +33,21 @@ const MessageScreen = ({ route, navigation }) => {
       const decoded = jwtDecode(token);
       setCurrentUser(decoded);
 
-      const newSocket = io("http://192.168.1.17:3000", {
+      const newSocket = io("wss://agilcurn-backend.onrender.com", {
         query: { token },
+        transports: ["websocket"],
       });
 
       newSocket.on("connect", () => {
         console.log("Socket connected");
+      });
+
+      newSocket.on("disconnect", () => {
+        console.log("Socket disconnected");
+      });
+
+      newSocket.on("reconnect", () => {
+        console.log("Socket reconnected");
       });
 
       newSocket.on("receiveMessage", (newMessage) => {
@@ -62,7 +71,7 @@ const MessageScreen = ({ route, navigation }) => {
       try {
         const token = await AsyncStorage.getItem("token");
         const response = await fetch(
-          `http://192.168.1.17:3000/chat/messages?userId=${selectedUser.id}&contactId=${currentUser.id}`,
+          `https://agilcurn-backend.onrender.com/chat/messages?userId=${selectedUser.id}&contactId=${currentUser.id}`,
           {
             method: "GET",
             headers: {
@@ -96,8 +105,9 @@ const MessageScreen = ({ route, navigation }) => {
         to: selectedUser.id,
         message,
         from: currentUser.id,
-        replyTo: replyTo?.id,
       };
+
+      console.log(chatMessage)
 
       socket.emit("sendMessage", chatMessage);
       setMessage("");

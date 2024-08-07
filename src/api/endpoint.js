@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const instance = axios.create({ baseURL: "http://192.168.1.17:3000" });
+const instance = axios.create({ baseURL: "https://agilcurn-backend.onrender.com" });
 
 const getAuthToken = async () => {
   const token = await AsyncStorage.getItem("token");

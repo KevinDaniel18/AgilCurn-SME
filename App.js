@@ -1,3 +1,4 @@
+// @ts-ignore
 import React from "react";
 import ProjectNavigation from "./src/components/Navigation/ProjectNavigation";
 import { ProjectProvider } from "./src/components/StoreProjects/ProjectContext";
@@ -11,18 +12,21 @@ import {
   AuthProvider,
   useAuth,
 } from "./src/components/AuthContext/AuthContext";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ProjectProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </ProjectProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ProjectProvider>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </ProjectProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 
