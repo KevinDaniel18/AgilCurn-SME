@@ -93,7 +93,8 @@ const SettingsScreen = () => {
       }
 
       const res = await deleteAccountByEmailAndPassword(email, password, token);
-      if (res && res.message === "Invalid token or token missing") {
+      if (res && res.message === "Invalid credentials") {
+        console.log("Error message received:", res.message);
         setError("This is not your account");
         setShowErrorModal(true);
       } else {
@@ -102,6 +103,7 @@ const SettingsScreen = () => {
       }
     } catch (error) {
       console.log("error", error);
+      setError("An error occurred. Please try again.");
       setShowErrorModal(true);
     }
     setIsModalVisible(false);

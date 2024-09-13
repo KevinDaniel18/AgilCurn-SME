@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity, Image } from "react-native";
+import { TouchableOpacity, Image, View, Text } from "react-native";
 import HomeScreen from "../Screens/HomeScreen";
 import ProjectsScreen from "../Screens/ProjectsScreen";
 import TasksScreen from "../Screens/TasksScreen";
@@ -53,7 +53,15 @@ const Navbar = ({ navigation }) => {
         name="Dashboard"
         component={HomeScreen}
         options={{
-          title: "agilCurn",
+          headerTitle: () => (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Image
+                source={require("../../../assets/agilcurn-logo.png")}
+                style={{ width: 25, height: 25, marginRight: 8 }}
+              />
+              <Text style={{ fontSize: 18, fontWeight: "bold" }}>agilCurn</Text>
+            </View>
+          ),
           headerRight: () => (
             <TouchableOpacity
               onPress={() => {
@@ -114,7 +122,6 @@ const Navbar = ({ navigation }) => {
           ),
         }}
       />
-      
     </Tab.Navigator>
   );
 };

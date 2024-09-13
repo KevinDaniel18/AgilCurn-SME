@@ -3,9 +3,9 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import {
   ALERT_TYPE,
@@ -14,6 +14,7 @@ import {
 } from "react-native-alert-notification";
 import Toast from "react-native-toast-message";
 import { postUser } from "../../api/endpoint";
+import AntDesign from "@expo/vector-icons/AntDesign";
 
 const RegisterScreen = ({ navigation }) => {
   const [userData, setUserData] = useState({
@@ -22,53 +23,67 @@ const RegisterScreen = ({ navigation }) => {
     password: "",
     repeatPassword: "",
   });
+  const [error, setError] = useState({
+    fullname: "",
+    email: "",
+    password: "",
+    repeatPassword: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(false);
+  const [passwordLengthValid, setPasswordLengthValid] = useState(false);
 
   //get inputs values
   const getInput = (name, value) => {
     setUserData((prevValue) => ({ ...prevValue, [name]: value }));
+    setError((prevErrors) => ({ ...prevErrors, [name]: "" }));
+
+    if (name === "password" || name === "repeatPassword") {
+      const { password, repeatPassword } = {
+        ...userData,
+        [name]: value,
+      };
+
+      setPasswordMatch(password === repeatPassword);
+      setPasswordLengthValid(password.length >= 6);
+    }
   };
 
   const handleRegister = async () => {
     try {
+      setLoading(true);
       const { fullname, email, password, repeatPassword } = userData;
+      let valid = true;
+      let newErrors = {};
 
       //validations
       if (!fullname.trim()) {
-        Dialog.show({
-          type: ALERT_TYPE.WARNING,
-          title: "Full name required",
-          textBody: "Please enter your full name.",
-          button: "close",
-        });
-        return;
+        newErrors.fullname = "Please enter your full name.";
+        valid = false;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        Dialog.show({
-          type: ALERT_TYPE.WARNING,
-          title: "Invalid email",
-          textBody: "Por favor ingresa un correo electrónico válido. Example: user@gmail.com ",
-          button: "close",
-        });
-        return;
+        newErrors.email = "Please enter a valid email address.";
+        valid = false;
       }
 
       if (password.length < 6) {
-        Dialog.show({
-          type: ALERT_TYPE.WARNING,
-          title: "Invalid password",
-          textBody: "The password must be at least 6 characters.",
-          button: "close",
-        });
-        return;
+        newErrors.password = "The password must be at least 6 characters.";
+        valid = false;
       }
 
       if (password !== repeatPassword) {
+        newErrors.repeatPassword = "Passwords do not match.";
+        valid = false;
+      }
+
+      if (!valid) {
+        setError(newErrors);
         Dialog.show({
           type: ALERT_TYPE.WARNING,
-          title: "Passwords do not match",
-          textBody: "Please make sure the passwords match.",
+          title: "Invalid Inputs",
+          textBody: "Please correct the highlighted errors.",
           button: "close",
         });
         return;
@@ -86,29 +101,33 @@ const RegisterScreen = ({ navigation }) => {
       });
 
       setTimeout(() => {
-        navigation.navigate("AuthFlow", {screen: "Login"});
-      }, 4000);
+        navigation.navigate("AuthFlow", { screen: "Login" });
+      }, 2000);
     } catch (error) {
-      
       Toast.show({
         type: "error",
-        text1: error.message,
+        text1: "Error",
         text2: "Email already exist",
         visibilityTime: 4000,
         autoHide: true,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const navigateToLogin = () => {
-    navigation.navigate("AuthFlow", {screen: "Login"});
+    navigation.navigate("AuthFlow", { screen: "Login" });
   };
 
   return (
     <AlertNotificationRoot>
       <View style={styles.container}>
-        <Text style={styles.title}>Register</Text>
+        <Text style={styles.title}>Create Account</Text>
 
+        {error.fullname ? (
+          <Text style={styles.errorText}>{error.fullname}</Text>
+        ) : null}
         <View style={styles.inputView}>
           <TextInput
             style={styles.input}
@@ -118,6 +137,9 @@ const RegisterScreen = ({ navigation }) => {
           />
         </View>
 
+        {error.email ? (
+          <Text style={styles.errorText}>{error.email}</Text>
+        ) : null}
         <View style={styles.inputView}>
           <TextInput
             style={styles.input}
@@ -129,33 +151,72 @@ const RegisterScreen = ({ navigation }) => {
           />
         </View>
 
-        <View style={styles.inputView}>
+        {error.password ? (
+          <View>
+            <Text style={styles.errorText}>{error.password}</Text>
+          </View>
+        ) : null}
+        <View style={styles.inputViewPass}>
           <TextInput
-            style={styles.input}
+            style={{ flex: 1 }}
             placeholder="Password"
             onChangeText={(text) => getInput("password", text)}
             value={userData.password}
             secureTextEntry
           />
+          {passwordLengthValid && (
+            <View style={styles.iconContainer}>
+              <AntDesign name="check" size={24} color="green" />
+            </View>
+          )}
         </View>
 
-        <View style={styles.inputView}>
+        {error.repeatPassword ? (
+          <Text style={styles.errorText}>{error.repeatPassword}</Text>
+        ) : null}
+        <View style={styles.inputViewPass}>
           <TextInput
-            style={styles.input}
+            style={{ flex: 1 }}
             placeholder="Repeat password"
             onChangeText={(text) => getInput("repeatPassword", text)}
             value={userData.repeatPassword}
             secureTextEntry
           />
+          {passwordMatch && passwordLengthValid && (
+            <View style={styles.iconContainer}>
+              <AntDesign name="check" size={24} color="green" />
+            </View>
+          )}
         </View>
+
         <View style={styles.actionContainer}>
-          <Button
-            title="REGISTER"
-            style={styles.registerButton}
+          <TouchableOpacity
             onPress={handleRegister}
-          />
+            style={{
+              backgroundColor: "#2196F3",
+              padding: 15,
+              borderRadius: 10,
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text
+                style={{
+                  color: "white",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}
+              >
+                Register
+              </Text>
+            )}
+          </TouchableOpacity>
           <TouchableOpacity onPress={navigateToLogin}>
-            <Text style={styles.loginText}>Do you already have an account? Get into</Text>
+            <Text style={styles.loginText}>
+              Do you already have an account? Get into
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -183,6 +244,21 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
   },
+  inputViewPass: {
+    width: "80%",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 25,
+    padding: 15,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconContainer: {
+    position: "absolute",
+    right: 15,
+    zIndex: 1,
+    padding: 5,
+  },
   registerButton: {
     width: "100%",
     backgroundColor: "#4caf50",
@@ -196,6 +272,11 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     marginTop: 60,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 5,
   },
 });
 

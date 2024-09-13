@@ -11,6 +11,7 @@ import {
 import { useProject } from "./StoreProjects/ProjectContext";
 import { postProjects } from "../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TouchableOpacity } from "react-native-gesture-handler";
 
 const CreateProjects = () => {
   const [projectName, setProjectName] = useState("");
@@ -152,18 +153,32 @@ const CreateProjects = () => {
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
-            title="Select a start date"
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#5cdb95",
+              padding: 15,
+              borderRadius: 15,
+            }}
             onPress={() => handleDateSelection("start")}
-            color="#5cdb95"
-          />
+          >
+            <Text style={{ color: "white", fontWeight: "bold" }}>
+              Select a start date
+            </Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.buttonContainer}>
-          <Button
-            title="Select an end date"
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#ff6b6b",
+              padding: 15,
+              borderRadius: 15,
+            }}
             onPress={() => handleDateSelection("end")}
-            color="#ff6b6b"
-          />
+          >
+            <Text style={{ color: "white", fontWeight: "bold" }}>
+              Select an end date
+            </Text>
+          </TouchableOpacity>
         </View>
         {showDate && (
           <DateTimePicker
@@ -178,10 +193,18 @@ const CreateProjects = () => {
           starts on {startDate.toLocaleString()} and ends on{" "}
           {endDate.toLocaleString()}
         </Text>
-
-        <View>
-          <Button title="Confirm and create" onPress={handleConfirmAndCreate} />
-        </View>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#007AFF",
+            padding: 15,
+            borderRadius: 15,
+          }}
+          onPress={handleConfirmAndCreate}
+        >
+          <Text style={{ color: "white", fontWeight: "bold" }}>
+            Confirm and create
+          </Text>
+        </TouchableOpacity>
 
         <StatusBar style="auto" />
       </View>
@@ -199,10 +222,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
     paddingHorizontal: 15,
     marginBottom: 15,
+    height: 50,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: "#fff",
   },
   input: {
     flex: 1,
@@ -210,8 +236,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   inputFocus: {
-    borderColor: "#ffa500",
-    borderWidth: 2,
+    borderColor: "black",
+    borderWidth: 0.5,
   },
   buttonContainer: {
     marginBottom: 10,
@@ -222,8 +248,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#333",
     backgroundColor: "white",
-    padding: 10,
+    padding: 15,
     fontSize: 12,
+    borderRadius: 10,
   },
   projectName: {
     fontWeight: "bold",

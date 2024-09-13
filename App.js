@@ -1,4 +1,5 @@
 // @ts-ignore
+import "react-native-reanimated"
 import React from "react";
 import ProjectNavigation from "./src/components/Navigation/ProjectNavigation";
 import { ProjectProvider } from "./src/components/StoreProjects/ProjectContext";
@@ -13,10 +14,12 @@ import {
   useAuth,
 } from "./src/components/AuthContext/AuthContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import SplashScreen from "./src/components/Screens/SplashScreen";
 
 const Stack = createStackNavigator();
 
 export default function App() {
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
@@ -31,7 +34,11 @@ export default function App() {
 }
 
 const AppNavigator = () => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, loading } = useAuth();
+
+  if (loading) {
+    return <SplashScreen />;
+  }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -39,6 +46,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Root" component={ProjectNavigation} />
       ) : (
         <>
+          <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="AuthFlow" component={AuthFlow} />
         </>
       )}

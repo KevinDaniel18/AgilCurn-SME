@@ -9,6 +9,7 @@ import ManageAccount from "../Screens/ManageAccount";
 import UserInfo from "../Screens/UserInfo";
 import { TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import ReportScreen from "../Screens/ReportScreen";
 
 const Stack = createStackNavigator();
 
@@ -20,7 +21,7 @@ const ProjectNavigation = () => {
         name="Navbar"
         component={Navbar}
       />
-      <Stack.Screen name="CreateProjects" component={CreateProjects} />
+      <Stack.Screen name="CreateProjects" component={CreateProjects} options={{title: "Create Projects"}} />
       <Stack.Screen
         name="MessageScreen"
         component={MessageScreen}
@@ -57,6 +58,7 @@ const ProjectNavigation = () => {
         options={{ title: "Manage Account" }}
       />
       <Stack.Screen name="UserInfo" component={UserInfo} options={{title: "Info"}} />
+      <Stack.Screen name="ReportScreen" component={ReportScreen} options={{title: "Reports"}} />
     </Stack.Navigator>
   );
 };

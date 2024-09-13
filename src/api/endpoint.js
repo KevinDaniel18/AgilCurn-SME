@@ -1,7 +1,8 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { EXPO_PRODUCTION_API_URL, EXPO_PUBLIC_API_URL } from "@env";
 
-const instance = axios.create({ baseURL: "https://agilcurn-backend.onrender.com" });
+const instance = axios.create({ baseURL: EXPO_PUBLIC_API_URL });
 
 const getAuthToken = async () => {
   const token = await AsyncStorage.getItem("token");
@@ -83,6 +84,12 @@ export function deleteProjectFromAPI(projectId) {
   return instance.delete(`/projects/${projectId}`);
 }
 
+export function leaveProjectFromAPI(projectId, userId) {
+  return instance.delete(`/projects/${projectId}/leave`, {
+    data: { userId },
+  });
+}
+
 export function inviteUserToProjects(projectId, userId) {
   return instance.post(`/projects/${projectId}/invite`, { userId });
 }
@@ -152,4 +159,24 @@ export function loadImageFromApi(userId) {
 
 export function deleteChat(userId, contactId) {
   return instance.post("/chat/deleteMessages", { userId, contactId });
+}
+
+export function fetchMessagesFromAPI(selectedUser, currentUser) {
+  return instance.get(
+    `/chat/messages?userId=${selectedUser}&contactId=${currentUser}`
+  );
+}
+
+export function getProjectStatus() {
+  return instance.get("/reports/projectStatus");
+}
+
+export function getTeamProductivity(startDate, endDate) {
+  return instance.get("/reports/teamProductivity", {
+    params: { startDate, endDate }
+  });
+}
+
+export function getBottlenecks() {
+  return instance.get("/reports/bottlenecks")
 }

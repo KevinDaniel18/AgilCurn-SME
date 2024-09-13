@@ -5,13 +5,14 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import { useProject } from "../StoreProjects/ProjectContext";
 import { getUserProjects } from "../../api/endpoint";
 import * as Progress from "react-native-progress";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   const { projects, setProjects } = useProject();
   const [refreshing, setRefreshing] = useState(false);
   const [progressValues, setProgressValues] = useState({});
@@ -90,49 +91,91 @@ const HomeScreen = () => {
   }, [progressValues]);
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={fetchProjects} />
-        }
-      >
-        {projects.map((project, index) => (
-          <View style={styles.projectContainer} key={index}>
-            <Text style={styles.projectName}>{project.projectName}</Text>
-            <Text style={styles.endDate}>
-              Start Date:{" "}
-              {project.startDate
-                ? project.startDate.toLocaleDateString()
-                : "Unknown"}{" "}
-              - End Date:{" "}
-              {project.endDate
-                ? project.endDate.toLocaleDateString()
-                : "Unknown"}
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={fetchProjects} />
+      }
+    >
+      {projects.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>You do not have projects yet.</Text>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate("CreateProjects");
+            }}
+          >
+            <Text
+              style={{
+                color: "orange",
+                textDecorationLine: "underline",
+                fontWeight: "bold",
+                fontStyle: "italic",
+              }}
+            >
+              Add project
             </Text>
-            <Text style={styles.projectId}>ID: {project.id}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {projects.map((project, index) => (
+            <TouchableOpacity
+              style={styles.projectContainer}
+              key={index}
+              onPress={() => {
+                navigation.navigate("ReportScreen", {
+                  projectId: project.id,
+                  startDate: project.startDate,
+                  endDate: project.endDate
+                });
+              }}
+            >
+              <Text style={styles.projectName}>{project.projectName}</Text>
+              <Text style={styles.endDate}>
+                Start Date:{" "}
+                {project.startDate
+                  ? project.startDate.toLocaleDateString()
+                  : "Unknown"}{" "}
+                - End Date:{" "}
+                {project.endDate
+                  ? project.endDate.toLocaleDateString()
+                  : "Unknown"}
+              </Text>
+              <Text style={styles.projectId}>ID: {project.id}</Text>
 
-            <Progress.Bar
-              progress={animatedProgressValues[project.id] || 0}
-              width={300}
-              color="#007AFF"
-              unfilledColor="#dddddd"
-              borderColor="transparent"
-              borderRadius={5}
-              height={20}
-            />
-          </View>
-        ))}
-      </ScrollView>
-    </View>
+              <Progress.Bar
+                progress={animatedProgressValues[project.id] || 0}
+                width={300}
+                color="#007AFF"
+                unfilledColor="#dddddd"
+                borderColor="transparent"
+                borderRadius={5}
+                height={20}
+              />
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     paddingVertical: 20,
     paddingHorizontal: 10,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 18,
+    color: "#666",
+    marginBottom: 10,
   },
   projectContainer: {
     backgroundColor: "#ffffff",

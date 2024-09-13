@@ -3,12 +3,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   deleteProjectFromAPI,
   getUserById,
+  leaveProjectFromAPI,
   userProfileImage,
 } from "../../api/endpoint";
-import axios from "axios";
 
 const ProjectContext = createContext();
-
 
 export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
@@ -95,12 +94,7 @@ export const ProjectProvider = ({ children }) => {
 
   const leaveProject = async (projectId, userId) => {
     try {
-      await axios.delete(
-        `https://agilcurn-backend.onrender.com/projects/${projectId}/leave`,
-        {
-          data: { userId },
-        }
-      );
+      await leaveProjectFromAPI(projectId, userId);
       const updatedProjects = projects.filter(
         (project) => project.id !== projectId
       );
@@ -111,7 +105,7 @@ export const ProjectProvider = ({ children }) => {
     }
   };
 
-  const updateProfileImage = async(uri) => {
+  const updateProfileImage = async (uri) => {
     setProfileImage(uri);
     saveProfileImageToStorage(uri);
   };

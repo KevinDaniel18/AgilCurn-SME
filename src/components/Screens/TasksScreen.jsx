@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   FlatList,
   StyleSheet,
   TouchableOpacity,
@@ -19,7 +18,12 @@ import {
 } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useProject } from "../StoreProjects/ProjectContext";
-import Toast from "react-native-toast-message";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+} from "react-native-alert-notification";
+import { Spinner } from "./ReportScreen";
 
 const TasksScreen = () => {
   const [task, setTask] = useState("");
@@ -29,6 +33,7 @@ const TasksScreen = () => {
   const [tasks, setTasks] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [error, setError] = useState("");
   const { projects } = useProject();
 
   useEffect(() => {
@@ -91,18 +96,26 @@ const TasksScreen = () => {
         setAssigneeId("");
         fetchTasks(projectId);
       } catch (error) {
+        console.log(error);
         if (error.response && error.response.status === 403) {
-          Toast.show({
-            type: "error",
-            text1: "Project not found",
-            text2: "Make sure you own or belong to a project",
-            autoHide: false,
-            position: "bottom"
+          Dialog.show({
+            type: ALERT_TYPE.WARNING,
+            title: "Project not found",
+            textBody: "Make sure you own or belong to a project",
+            button: "close",
+          });
+        }
+        if (error.response && error.response.status === 500) {
+          Dialog.show({
+            type: ALERT_TYPE.WARNING,
+            title: "User ID not found",
+            textBody: "Make sure this ID exists",
+            button: "close",
           });
         }
       }
     } else {
-      console.error("Task title and Project ID are required");
+      setError("Task title and Project ID are required");
     }
   };
 
@@ -122,75 +135,98 @@ const TasksScreen = () => {
     }
   };
 
+  const handleTaskChange = (text) => {
+    setTask(text);
+    if (text.trim() !== "" && projectId.trim() !== "") {
+      setError("");
+    }
+  };
+
+  const handleProjectIdChange = (text) => {
+    setProjectId(text);
+    if (task.trim() !== "" && text.trim() !== "") {
+      setError("");
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Add New Task</Text>
+    <AlertNotificationRoot>
+      <View style={styles.container}>
+        <Text style={styles.header}>Add New Task</Text>
+        <Text style={styles.infoText}>Fields marked * are required.</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter task title*"
+          onChangeText={handleTaskChange}
+          value={task}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter project ID*"
+          onChangeText={handleProjectIdChange}
+          value={projectId.trim()}
+          keyboardType="numeric"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter description (recommended)"
+          onChangeText={(text) => setDescription(text)}
+          value={description}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter assignee ID (optional)"
+          onChangeText={(text) => setAssigneeId(text)}
+          value={assigneeId.trim()}
+          keyboardType="numeric"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Enter task title"
-        onChangeText={(text) => setTask(text)}
-        value={task}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter project ID"
-        onChangeText={(text) => setProjectId(text)}
-        value={projectId}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter description (optional)"
-        onChangeText={(text) => setDescription(text)}
-        value={description}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter assignee ID (optional)"
-        onChangeText={(text) => setAssigneeId(text)}
-        value={assigneeId}
-        keyboardType="numeric"
-      />
+        <TouchableOpacity style={styles.createTask} onPress={addTask}>
+          <Text style={{ color: "white", fontWeight: "bold" }}>Add Task</Text>
+        </TouchableOpacity>
+        <Text style={{ color: "red", fontSize: 10, textAlign: "center" }}>
+          {error}
+        </Text>
+        {tasks.length > 0 ? (
+          <FlatList
+            style={styles.list}
+            data={tasks}
+            renderItem={({ item, index }) => (
+              <View style={styles.taskContainer}>
+                <View style={styles.taskDetails}>
+                  <Text style={styles.taskTitle}>{item.title}</Text>
+                  <Text style={styles.taskDetail}>
+                    Project ID: {item.projectId}
+                  </Text>
+                  <Text style={styles.taskDetail}>
+                    Description: {item.description}
+                  </Text>
+                  <Text style={styles.taskDetail}>
+                    Assignee ID: {item.assigneeId}
+                  </Text>
+                </View>
 
-      <Button title="Add Task" onPress={addTask} color="#007bff" />
-
-      <FlatList
-        style={styles.list}
-        data={tasks}
-        renderItem={({ item, index }) => (
-          <View style={styles.taskContainer}>
-            <View style={styles.taskDetails}>
-              <Text style={styles.taskTitle}>{item.title}</Text>
-              <Text style={styles.taskDetail}>
-                Project ID: {item.projectId}
-              </Text>
-              <Text style={styles.taskDetail}>
-                Description: {item.description}
-              </Text>
-              <Text style={styles.taskDetail}>
-                Assignee ID: {item.assigneeId}
-              </Text>
-            </View>
-
-            {(item.creatorId === userId ||
-              item.project.creatorId === userId) && (
-              <TouchableOpacity
-                style={styles.iconContainer}
-                onPress={() => deleteTask(index)}
-              >
-                <Feather name="trash" size={24} color="#ff6b6b" />
-              </TouchableOpacity>
+                {(item.creatorId === userId ||
+                  item.project.creatorId === userId) && (
+                  <TouchableOpacity
+                    style={styles.iconContainer}
+                    onPress={() => deleteTask(index)}
+                  >
+                    <Feather name="trash" size={24} color="#ff6b6b" />
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
-          </View>
+            keyExtractor={(item, index) => index.toString()}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          />
+        ) : (
+          <Spinner/>
         )}
-        keyExtractor={(item, index) => index.toString()}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      />
-      <Toast />
-    </View>
+      </View>
+    </AlertNotificationRoot>
   );
 };
 
@@ -238,6 +274,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "500",
   },
+  infoText: {
+    fontSize: 11,
+    color: "#666",
+  },
   taskDetail: {
     fontSize: 14,
     color: "#666",
@@ -246,6 +286,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: 30,
+  },
+  createTask: {
+    backgroundColor: "#007AFF",
+    borderRadius: 8,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginVertical: 10,
   },
 });
 

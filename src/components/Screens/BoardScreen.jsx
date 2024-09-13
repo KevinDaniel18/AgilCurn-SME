@@ -10,7 +10,10 @@ import {
   RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getTasks, updateTask } from "../../api/endpoint";
+import {
+  getTasks,
+  updateTask,
+} from "../../api/endpoint";
 
 const BoardScreen = () => {
   const [tasks, setTasks] = useState([]);
@@ -155,7 +158,9 @@ const BoardScreen = () => {
             />
           </View>
         ) : (
-          <Text style={styles.textStyle}>There are no projects yet.</Text>
+          <Text style={styles.textStyle}>
+            There are no projects and tasks yet.
+          </Text>
         )}
 
         {selectedProjectId && tasks.length > 0 && (
@@ -170,14 +175,12 @@ const BoardScreen = () => {
                     <Text style={styles.taskStatus}>Status: {item.status}</Text>
 
                     {(item.creatorId === userId ||
-                      item.project.creatorId === userId) && (
+                      item.project.creatorId === userId ||
+                      item.assigneeId === userId) && (
                       <View style={styles.buttonContainer}>
-                         <Button
+                        <Button
                           title="TO DO"
-                          onPress={() =>
-                            updateTaskStatus(item.id, "TODO")
-                          }
-                          
+                          onPress={() => updateTaskStatus(item.id, "TODO")}
                         />
                         <Button
                           title="In Progress"

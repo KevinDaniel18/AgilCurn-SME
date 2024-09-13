@@ -10,11 +10,14 @@ import {
 import { getInvitedUsers } from "../../api/endpoint";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import io from "socket.io-client";
+import { EXPO_PRODUCTION_API_MESSAGE_URL, EXPO_PUBLIC_API_URL } from "@env";
 
 const UserListScreen = ({ navigation, route }) => {
   const { projectId } = route.params;
   const [users, setUsers] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
 
   useEffect(() => {
     const fetchCurrentUserId = async () => {
@@ -30,7 +33,6 @@ const UserListScreen = ({ navigation, route }) => {
       const fetchUsers = async () => {
         try {
           const response = await getInvitedUsers(projectId);
-          console.log("Fetched users:", response.data); 
           const filteredUsers = response.data.filter(
             (user) => user.id !== currentUserId
           );
@@ -46,8 +48,37 @@ const UserListScreen = ({ navigation, route }) => {
     }
   }, [projectId, currentUserId]);
 
+  useEffect(() => {
+    const initializeSocket = async () => {
+      const socket = io(EXPO_PUBLIC_API_URL, {
+        query: { token: await AsyncStorage.getItem("token") },
+        transports: ["websocket"],
+      });
+
+      socket.on("userStatus", ({ id, status }) => {
+        setOnlineUsers((prev) => {
+          const newOnlineUsers = new Set(prev);
+          if (status === "online") {
+            newOnlineUsers.add(id);
+          } else {
+            newOnlineUsers.delete(id);
+          }
+          return newOnlineUsers;
+        });
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    };
+    initializeSocket();
+  }, []);
+
   const handleSelectUser = (user) => {
-    navigation.navigate("MessageScreen", { selectedUser: user, currentUser: currentUserId });
+    navigation.navigate("MessageScreen", {
+      selectedUser: user,
+      currentUser: currentUserId,
+    });
   };
 
   return (
@@ -64,9 +95,11 @@ const UserListScreen = ({ navigation, route }) => {
               >
                 {item.profileImage ? (
                   <Image
-                    source={{ uri: item.profileImage || 'default_image_url' }}
+                    source={{ uri: item.profileImage || "default_image_url" }}
                     style={styles.profileImage}
-                    onError={(e) => console.log("Image load error:", e.nativeEvent.error)}
+                    onError={(e) =>
+                      console.log("Image load error:", e.nativeEvent.error)
+                    }
                   />
                 ) : (
                   <Ionicons
@@ -77,6 +110,16 @@ const UserListScreen = ({ navigation, route }) => {
                   />
                 )}
                 <Text style={styles.userName}>{item.fullname}</Text>
+                <View
+                  style={[
+                    styles.statusIndicator,
+                    {
+                      backgroundColor: onlineUsers.has(item.id)
+                        ? "green"
+                        : "gray",
+                    },
+                  ]}
+                />
               </TouchableOpacity>
             );
           }}
@@ -101,6 +144,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: "center",
     fontSize: 16,
+    color: "gray",
   },
   userList: {
     flex: 1,
@@ -141,6 +185,12 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
+  },
+  statusIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginLeft: 10,
   },
 });
 

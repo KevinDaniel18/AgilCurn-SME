@@ -3,19 +3,21 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
   TouchableOpacity,
+  Image
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { loginUser } from "../../api/endpoint";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../AuthContext/AuthContext";
+import Feather from "@expo/vector-icons/Feather";
 
 const LoginScreen = ({ navigation }) => {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const navigate = useNavigation();
 
@@ -64,27 +66,45 @@ const LoginScreen = ({ navigation }) => {
     navigate.navigate("ForgotPass");
   };
 
+  const togglePasswordVisibility = () => {
+    setPasswordVisible(!passwordVisible);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+       <Image
+        source={require("../../../assets/agilcurn-logo.png")}
+        style={{height: 80, width: 80, marginBottom: 30}}
+      />
 
-      <View style={styles.inputView}>
+      <View style={styles.inputView1}>
         <TextInput
           style={styles.input}
           placeholder="Email"
           onChangeText={(text) => setEmail(text)}
           value={email}
+          autoCapitalize="none"
         />
       </View>
 
       <View style={styles.inputView}>
         <TextInput
-          style={styles.input}
+          style={{flex: 1}}
           placeholder="Password"
           onChangeText={(text) => setPassword(text)}
           value={password}
-          secureTextEntry
+          secureTextEntry={!passwordVisible}
         />
+        <TouchableOpacity
+          onPress={togglePasswordVisibility}
+          style={styles.icon}
+        >
+          <Feather
+            name={passwordVisible ? "eye-off" : "eye"}
+            size={20}
+            color="gray"
+          />
+        </TouchableOpacity>
       </View>
       <TouchableOpacity
         onPress={navigateToForgotPassword}
@@ -94,11 +114,16 @@ const LoginScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.actionContainer}>
-        <Button
-          title="LOGIN"
-          style={styles.loginButton}
+        <TouchableOpacity
           onPress={handleLogin}
-        />
+          style={{ backgroundColor: "#2196F3", padding: 15, borderRadius: 10 }}
+        >
+          <Text
+            style={{ color: "white", textAlign: "center", fontWeight: "bold" }}
+          >
+            Login
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={navigateToRegister}>
           <Text style={styles.registerText}>
             You do not have an account? Sign up here
@@ -122,12 +147,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
+  inputView1: {
+    width: "80%",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 25,
+    padding: 15,
+    marginBottom: 10,
+  },
   inputView: {
     width: "80%",
     backgroundColor: "#f0f0f0",
     borderRadius: 25,
     padding: 15,
     marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  icon: {
+    padding: 5,
   },
   loginButton: {
     width: "100%",
@@ -141,6 +178,8 @@ const styles = StyleSheet.create({
     color: "#000",
     alignSelf: "flex-end",
     marginRight: 30,
+    fontWeight: "bold",
+    fontStyle: "italic"
   },
   registerText: {
     color: "#29374a",

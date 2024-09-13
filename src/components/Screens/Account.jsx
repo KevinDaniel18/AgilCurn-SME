@@ -198,10 +198,9 @@ const Account = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: "#f5f5f5",
     padding: 20,
-    paddingBottom: 40,
   },
   profileContainer: {
     flexDirection: "row",

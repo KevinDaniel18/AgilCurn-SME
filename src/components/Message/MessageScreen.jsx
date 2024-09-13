@@ -3,13 +3,16 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   FlatList,
   StyleSheet,
+  TouchableOpacity,
 } from "react-native";
 import io from "socket.io-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
+import { fetchMessagesFromAPI } from "../../api/endpoint";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { EXPO_PRODUCTION_API_MESSAGE_URL, EXPO_PUBLIC_API_URL } from "@env";
 
 const MessageScreen = ({ route, navigation }) => {
   const { selectedUser } = route.params;
@@ -33,7 +36,7 @@ const MessageScreen = ({ route, navigation }) => {
       const decoded = jwtDecode(token);
       setCurrentUser(decoded);
 
-      const newSocket = io("wss://agilcurn-backend.onrender.com", {
+      const newSocket = io(EXPO_PUBLIC_API_URL, {
         query: { token },
         transports: ["websocket"],
       });
@@ -69,23 +72,18 @@ const MessageScreen = ({ route, navigation }) => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const token = await AsyncStorage.getItem("token");
-        const response = await fetch(
-          `https://agilcurn-backend.onrender.com/chat/messages?userId=${selectedUser.id}&contactId=${currentUser.id}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
+        const response = await fetchMessagesFromAPI(
+          selectedUser.id,
+          currentUser.id
         );
-        const messageHistory = await response.json();
+        console.log("mensajes:", response.data);
+        const messageHistory = await response.data;
         const updatedMessages = messageHistory
           .filter((msg) => msg.deletedBy !== currentUser.id)
           .map((msg) => ({
             ...msg,
             isSent: msg.fromId === currentUser.id,
+            formattedTime: formatMessageTime(msg.createdAt),
           }));
         setMessages(updatedMessages);
         await AsyncStorage.setItem("messages", JSON.stringify(updatedMessages));
@@ -99,23 +97,36 @@ const MessageScreen = ({ route, navigation }) => {
     }
   }, [selectedUser, currentUser]);
 
+  const formatMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleTimeString();
+  };
+
   const handleSendMessage = () => {
-    if (socket && selectedUser) {
-      const chatMessage = {
-        to: selectedUser.id,
-        message,
-        from: currentUser.id,
-      };
+    if (message !== "") {
+      if (socket && selectedUser) {
+        const chatMessage = {
+          to: selectedUser.id,
+          message,
+          from: currentUser.id,
+          createdAt: new Date().toISOString(),
+        };
 
-      console.log(chatMessage)
+        console.log(chatMessage);
 
-      socket.emit("sendMessage", chatMessage);
-      setMessage("");
-      setReplyTo(null);
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { ...chatMessage, isSent: true },
-      ]);
+        const formattedChatMessage = {
+          ...chatMessage,
+          formattedTime: formatMessageTime(chatMessage.createdAt),
+        };
+
+        socket.emit("sendMessage", chatMessage);
+        setMessage("");
+        setReplyTo(null);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { ...formattedChatMessage, isSent: true },
+        ]);
+      }
     }
   };
 
@@ -134,9 +145,14 @@ const MessageScreen = ({ route, navigation }) => {
   };
 
   const handleReceiveMessage = (newMessage) => {
+    console.log("mensaje recibido", newMessage);
+    const formattedNewMessage = {
+      ...newMessage,
+      formattedTime: formatMessageTime(newMessage.createdAt),
+    };
     setMessages((prevMessages) => [
       ...prevMessages,
-      { ...newMessage, isSent: false },
+      { ...formattedNewMessage, isSent: false },
     ]);
   };
 
@@ -152,6 +168,9 @@ const MessageScreen = ({ route, navigation }) => {
       ]}
     >
       <Text>{item.message}</Text>
+      <Text style={styles.timestamp}>
+        {item.formattedTime || item.createdAt}
+      </Text>
     </View>
   );
 
@@ -178,7 +197,13 @@ const MessageScreen = ({ route, navigation }) => {
           onChangeText={handleTyping}
           placeholder="Type a message..."
         />
-        <Button onPress={handleSendMessage} title="Send" />
+        <TouchableOpacity
+          onPress={handleSendMessage}
+          disabled={!message.trim()}
+          style={[styles.sendButton, { opacity: message.trim() ? 1 : 0.5 }]}
+        >
+          <Ionicons name="send" size={24} color="#ff9400" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -210,9 +235,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
+  timestamp: {
+    fontSize: 10,
+    color: "#888",
+    marginTop: 5,
+    textAlign: "right",
+  },
   sentMessage: {
     backgroundColor: "#DCF8C6",
     alignSelf: "flex-end",
+  },
+  sendButton: {
+    marginLeft: 10,
   },
   receivedMessage: {
     backgroundColor: "#F0F0F0",

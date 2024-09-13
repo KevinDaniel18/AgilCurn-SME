@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  Button,
   TouchableOpacity,
 } from "react-native";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
 import { recoverPassword } from "../../api/endpoint";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 const Forgot = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -65,11 +65,13 @@ const Forgot = ({ navigation }) => {
     }
   };
   function backToLogin() {
-    navigation.navigate("AuthFlow", {screen: "Login"});
+    navigation.navigate("AuthFlow", { screen: "Login" });
   }
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Password recovery</Text>
+
+      <Text style={{textAlign: "center", margin: 10, marginBottom: 30, fontStyle: "italic"}}>Please enter the email address you would like your password reset information sen to.</Text>
 
       <View style={styles.inputView}>
         <TextInput
@@ -81,13 +83,19 @@ const Forgot = ({ navigation }) => {
       </View>
 
       <View style={styles.actionContainer}>
-        <Button
-          title="RECOVER"
-          style={styles.recoverButton}
+        <TouchableOpacity
           onPress={handleRecoverPassword}
-        />
+          style={{ backgroundColor: "#2196F3", padding: 15, borderRadius: 10 }}
+        >
+          <Text
+            style={{ color: "white", textAlign: "center", fontWeight: "bold" }}
+          >
+            Request reset link
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={backToLogin}>
-          <Text style={styles.comeBackText}>Go back</Text>
+          <Text style={styles.comeBackText}>Back To Login</Text>
         </TouchableOpacity>
       </View>
       <Toast />
@@ -127,8 +135,8 @@ const styles = StyleSheet.create({
   comeBackText: {
     color: "#29374a",
     textDecorationLine: "underline",
-    marginTop: 15,
-    textAlign: "center"
+    marginTop: 30,
+    textAlign: "center",
   },
 });
 

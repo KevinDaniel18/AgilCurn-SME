@@ -2,15 +2,15 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   Modal,
   TouchableOpacity,
   ScrollView,
   TextInput,
+  SafeAreaView,
 } from "react-native";
 import { useProject } from "../StoreProjects/ProjectContext";
-import { inviteUserToProjects } from "../../api/endpoint";
+import {  inviteUserToProjects } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
 
@@ -39,7 +39,7 @@ const ProjectsScreen = ({ navigation }) => {
   const confirmDeleteProject = async () => {
     if (selectedIndex !== null && projects[selectedIndex]) {
       deleteProject(selectedIndex);
-      await AsyncStorage.removeItem("projectId")
+      await AsyncStorage.removeItem("projectId");
       setShowModal(false);
     }
   };
@@ -49,9 +49,9 @@ const ProjectsScreen = ({ navigation }) => {
     setShowInviteModal(true);
   };
 
-  const handleLeaveProject = async(index) => {
+  const handleLeaveProject = async (index) => {
     setSelectedIndex(index);
-    await AsyncStorage.removeItem("projectId")
+    await AsyncStorage.removeItem("projectId");
     setShowModal(true);
   };
 
@@ -64,15 +64,56 @@ const ProjectsScreen = ({ navigation }) => {
         setShowInviteModal(false);
         setInvitedUserId("");
       } catch (error) {
-       if(error.response && error.response.status === 400){
-        Toast.show({
-          type: "info",
-          text1: "Failed to inviting user",
-          text2: "Make sure you entered User ID",
-          autoHide: false,
-          position: "bottom"
-        });
-       }
+        if (error.response) {
+          const { status, data } = error.response;
+          console.log("Status:", status);
+          if (status === 500) {
+            Toast.show({
+              type: "error",
+              text1: "Server Error",
+              text2: "An unexpected error occurred. Please try again later.",
+              autoHide: false,
+              position: "top",
+            });
+          } else if (status === 409) {
+            Toast.show({
+              type: "info",
+              text1: "Invitation Conflict",
+              text2:
+                data.message ||
+                "The user has already been invited or has confirmed the invitation.",
+              autoHide: true,
+              position: "top",
+            });
+          } else if (status === 404) {
+            Toast.show({
+              type: "error",
+              text1: "Failed to inviting user",
+              text2: "User ID does not exist",
+              autoHide: false,
+              position: "top",
+            });
+          } else if (status === 400) {
+            Toast.show({
+              type: "info",
+              text1: "Invalid Operation",
+              text2:
+                data.message ||
+                "You cannot invite yourself to your own project.",
+              autoHide: true,
+              position: "top",
+            });
+          }
+        } else {
+          console.error("Network or unexpected error:", error);
+          Toast.show({
+            type: "error",
+            text1: "Network Error",
+            text2: "Unable to connect. Please check your internet connection.",
+            autoHide: true,
+            position: "top",
+          });
+        }
       }
     }
   };
@@ -99,8 +140,11 @@ const ProjectsScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
         {projects.length > 0 ? (
           <View>
             {projects.map((project, index) => (
@@ -109,30 +153,34 @@ const ProjectsScreen = ({ navigation }) => {
                   <Text style={styles.projectName}>{project.projectName}</Text>
                 </View>
                 <View style={styles.buttonGroup}>
-                  <Button
-                    title="View Users"
+                  <TouchableOpacity
+                    style={[styles.button, styles.viewButton]}
                     onPress={() => handleViewUsers(index)}
-                    color="#007AFF"
-                  />
+                  >
+                    <Text style={styles.buttonText}>View Users</Text>
+                  </TouchableOpacity>
                   {project.creatorId === userId ? (
                     <>
-                      <Button
-                        title="Invite"
+                      <TouchableOpacity
+                        style={[styles.button, styles.inviteButton]}
                         onPress={() => handleInviteUser(index)}
-                        color="#007AFF"
-                      />
-                      <Button
-                        title="Delete"
+                      >
+                        <Text style={styles.buttonText}>Invite</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.button, styles.deleteButton]}
                         onPress={() => handleDeleteProject(index)}
-                        color="#FF3B30"
-                      />
+                      >
+                        <Text style={styles.buttonText}>Delete</Text>
+                      </TouchableOpacity>
                     </>
                   ) : (
-                    <Button
-                      title="Leave"
+                    <TouchableOpacity
+                      style={[styles.button, styles.deleteButton]}
                       onPress={() => handleLeaveProject(index)}
-                      color="#FF3B30"
-                    />
+                    >
+                      <Text style={styles.buttonText}>Leave</Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               </View>
@@ -197,11 +245,12 @@ const ProjectsScreen = ({ navigation }) => {
         onRequestClose={() => setShowInviteModal(false)}
       >
         <View style={styles.modalContainer}>
+          <Toast />
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>Enter User ID to invite:</Text>
             <TextInput
               style={styles.input}
-              value={invitedUserId}
+              value={invitedUserId.trim()}
               onChangeText={setInvitedUserId}
               keyboardType="numeric"
             />
@@ -209,8 +258,16 @@ const ProjectsScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#007AFF" }]}
                 onPress={confirmInviteUser}
+                disabled={!invitedUserId.trim()}
               >
-                <Text style={styles.modalButtonText}>Invite</Text>
+                <Text
+                  style={[
+                    styles.modalButtonText,
+                    { opacity: invitedUserId.trim() ? 1 : 0.5 },
+                  ]}
+                >
+                  Invite
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#E5E5E5" }]}
@@ -222,8 +279,7 @@ const ProjectsScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-      <Toast/>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -259,6 +315,43 @@ const styles = StyleSheet.create({
   buttonGroup: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  viewButton: {
+    backgroundColor: "#007bff",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  inviteButton: {
+    backgroundColor: "#28a745",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  deleteButton: {
+    backgroundColor: "#dc3545",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
   },
   textStyle: {
     textAlign: "center",
