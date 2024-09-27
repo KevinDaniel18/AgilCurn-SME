@@ -10,6 +10,7 @@ import UserInfo from "../Screens/UserInfo";
 import { TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import ReportScreen from "../Screens/ReportScreen";
+import AttachDocuments from "../Screens/AttachDocuments";
 
 const Stack = createStackNavigator();
 
@@ -59,6 +60,7 @@ const ProjectNavigation = () => {
       />
       <Stack.Screen name="UserInfo" component={UserInfo} options={{title: "Info"}} />
       <Stack.Screen name="ReportScreen" component={ReportScreen} options={{title: "Reports"}} />
+      <Stack.Screen name="AttachDocuments" component={AttachDocuments} options={{title: "Documents"}} />
     </Stack.Navigator>
   );
 };

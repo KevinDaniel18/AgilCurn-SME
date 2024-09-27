@@ -147,7 +147,7 @@ const Account = ({ navigation }) => {
       />
       <View style={styles.profileContainer}>
         <Image
-          source={{ uri: localProfileImage || "default_image_url" }}
+          source={{ uri: localProfileImage}}
           style={styles.profileImage}
         />
         <View style={styles.profileInfo}>

@@ -37,3 +37,7 @@ yarn-error.*
 .env.local
 
 .env.local
+
+/android
+/ios
+

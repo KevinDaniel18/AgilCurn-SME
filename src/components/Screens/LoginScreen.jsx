@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  Image
+  Image,
+  Alert,
+  BackHandler,
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { loginUser } from "../../api/endpoint";
@@ -70,11 +72,32 @@ const LoginScreen = ({ navigation }) => {
     setPasswordVisible(!passwordVisible);
   };
 
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert("Exit App", "Are you sure you want to exit?", [
+        {
+          text: "Cancel",
+          onPress: () => null,
+          style: "cancel",
+        },
+        { text: "Yes", onPress: () => BackHandler.exitApp() },
+      ]);
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
   return (
     <View style={styles.container}>
-       <Image
+      <Image
         source={require("../../../assets/agilcurn-logo.png")}
-        style={{height: 80, width: 80, marginBottom: 30}}
+        style={{ height: 80, width: 80, marginBottom: 30 }}
       />
 
       <View style={styles.inputView1}>
@@ -89,7 +112,7 @@ const LoginScreen = ({ navigation }) => {
 
       <View style={styles.inputView}>
         <TextInput
-          style={{flex: 1}}
+          style={{ flex: 1 }}
           placeholder="Password"
           onChangeText={(text) => setPassword(text)}
           value={password}
@@ -161,7 +184,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
   },
   icon: {
     padding: 5,
@@ -179,7 +202,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     marginRight: 30,
     fontWeight: "bold",
-    fontStyle: "italic"
+    fontStyle: "italic",
   },
   registerText: {
     color: "#29374a",

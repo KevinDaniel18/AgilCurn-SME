@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,14 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import io from "socket.io-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 import { fetchMessagesFromAPI } from "../../api/endpoint";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { EXPO_PRODUCTION_API_MESSAGE_URL, EXPO_PUBLIC_API_URL } from "@env";
+import { Spinner } from "../Screens/ReportScreen";
 
 const MessageScreen = ({ route, navigation }) => {
   const { selectedUser } = route.params;
@@ -23,6 +25,9 @@ const MessageScreen = ({ route, navigation }) => {
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
   const [replyTo, setReplyTo] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const flatListRef = useRef();
 
   useEffect(() => {
     navigation.setOptions({ title: selectedUser.fullname });
@@ -69,40 +74,51 @@ const MessageScreen = ({ route, navigation }) => {
     initializeSocket();
   }, []);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await fetchMessagesFromAPI(
-          selectedUser.id,
-          currentUser.id
-        );
-        console.log("mensajes:", response.data);
-        const messageHistory = await response.data;
-        const updatedMessages = messageHistory
-          .filter((msg) => msg.deletedBy !== currentUser.id)
-          .map((msg) => ({
-            ...msg,
-            isSent: msg.fromId === currentUser.id,
-            formattedTime: formatMessageTime(msg.createdAt),
-          }));
-        setMessages(updatedMessages);
-        await AsyncStorage.setItem("messages", JSON.stringify(updatedMessages));
-      } catch (error) {
-        console.error("Error fetching message history:", error);
-      }
-    };
+  const fetchMessages = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchMessagesFromAPI(
+        selectedUser.id,
+        currentUser.id
+      );
+      console.log(response.data);
+      const messageHistory = await response.data;
+      const updatedMessages = messageHistory
+        .filter((msg) => msg.deletedBy !== currentUser.id)
+        .map((msg) => ({
+          ...msg,
+          isSent: msg.fromId === currentUser.id,
+          formattedTime: formatMessageTime(msg.createdAt),
+        }));
+      setMessages(updatedMessages);
+      await AsyncStorage.setItem("messages", JSON.stringify(updatedMessages));
+    } catch (error) {
+      console.error("Error fetching message history:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (currentUser) {
       fetchMessages();
     }
   }, [selectedUser, currentUser]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (currentUser) {
+        fetchMessages();
+      }
+    }, [currentUser])
+  );
 
   const formatMessageTime = (timestamp) => {
     const date = new Date(timestamp);
     return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleTimeString();
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (message !== "") {
       if (socket && selectedUser) {
         const chatMessage = {
@@ -118,6 +134,8 @@ const MessageScreen = ({ route, navigation }) => {
           ...chatMessage,
           formattedTime: formatMessageTime(chatMessage.createdAt),
         };
+
+        flatListRef.current.scrollToEnd({ animated: true });
 
         socket.emit("sendMessage", chatMessage);
         setMessage("");
@@ -144,8 +162,8 @@ const MessageScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleReceiveMessage = (newMessage) => {
-    console.log("mensaje recibido", newMessage);
+  const handleReceiveMessage = async (newMessage) => {
+    console.log("mensaje recibido", newMessage)
     const formattedNewMessage = {
       ...newMessage,
       formattedTime: formatMessageTime(newMessage.createdAt),
@@ -176,35 +194,44 @@ const MessageScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={messages}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={renderItem}
-        style={styles.messageList}
-        ListFooterComponent={
-          isTyping ? (
-            <View style={styles.typingContainer}>
-              <Text style={styles.typingIndicator}>Typing...</Text>
-            </View>
-          ) : null
-        }
-      />
+      {isLoading ? (
+        <Spinner />
+      ) : (
+        <>
+          <FlatList
+            data={messages}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+            style={styles.messageList}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            ref={flatListRef}
+            keyboardShouldPersistTaps="handled"
+            ListFooterComponent={
+              isTyping ? (
+                <View style={styles.typingContainer}>
+                  <Text style={styles.typingIndicator}>Typing...</Text>
+                </View>
+              ) : null
+            }
+          />
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={message}
-          onChangeText={handleTyping}
-          placeholder="Type a message..."
-        />
-        <TouchableOpacity
-          onPress={handleSendMessage}
-          disabled={!message.trim()}
-          style={[styles.sendButton, { opacity: message.trim() ? 1 : 0.5 }]}
-        >
-          <Ionicons name="send" size={24} color="#ff9400" />
-        </TouchableOpacity>
-      </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={message}
+              onChangeText={handleTyping}
+              placeholder="Type a message..."
+            />
+            <TouchableOpacity
+              onPress={handleSendMessage}
+              disabled={!message.trim()}
+              style={[styles.sendButton, { opacity: message.trim() ? 1 : 0.5 }]}
+            >
+              <Ionicons name="send" size={24} color="#ff9400" />
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </View>
   );
 };
@@ -229,7 +256,7 @@ const styles = StyleSheet.create({
   messageItem: {
     padding: 10,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,

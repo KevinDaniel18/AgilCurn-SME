@@ -7,6 +7,7 @@ import {
   Button,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRoute } from "@react-navigation/native";
@@ -15,10 +16,11 @@ import {
   getProjectStatus,
   getTeamProductivity,
 } from "../../api/endpoint";
-import { Bar, Pie, PolarChart, CartesianChart, Line } from "victory-native";
-import { LinearGradient, vec } from "@shopify/react-native-skia";
+import { Pie, PolarChart, CartesianChart, Line } from "victory-native";
+import { Table, Row, Rows } from "react-native-table-component";
 import { useFont } from "@shopify/react-native-skia";
 import inter from "../../../assets/fonts/Inter-Regular.ttf";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 export const Spinner = () => (
   <View style={styles.spinnerContainer}>
@@ -28,41 +30,79 @@ export const Spinner = () => (
 
 const ReportScreen = () => {
   const route = useRoute();
-  const { projectId, startDate, endDate } = route.params;
+  const { projectId, projectName, startDate, endDate } = route.params;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
   const [projectStatus, setProjectStatus] = useState(null);
   const [teamProductivity, setTeamProductivity] = useState(null);
-  const [bottlenecks, setBottlenecks] = useState(null);
+  const [bottlenecks, setBottlenecks] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState("");
 
   const font = useFont(inter, 12);
 
   useEffect(() => {
     const fetchReports = async () => {
       try {
+        if (isInitialLoading) setIsLoading(true);
         const statusResponse = await getProjectStatus(projectId);
         const filteredStatus = statusResponse.data.find(
           (project) => project.projectId === projectId
         );
         setProjectStatus(filteredStatus);
 
-        const productivityResponse = await getTeamProductivity(
-          startDate,
-          endDate
-        );
+        const productivityResponse = await getTeamProductivity(start, end);
         setTeamProductivity(productivityResponse.data);
-        console.log(productivityResponse.data);
 
         const bottlenecksResponse = await getBottlenecks();
         setBottlenecks(bottlenecksResponse.data);
       } catch (error) {
         console.error("Error fetching reports:", error);
+      } finally {
+        setIsLoading(false);
+        if (isInitialLoading) setIsInitialLoading(false);
       }
     };
 
-    if (projectId && startDate && endDate) {
+    if (projectId && start && end) {
+      console.log("fetch reports");
       fetchReports();
     }
-  }, [projectId, startDate, endDate]);
+  }, [projectId]);
+
+  useEffect(() => {
+    if (projectStatus && projectStatus.endDate) {
+      const endDate = new Date(projectStatus.endDate);
+
+      const updateRemainingTime = () => {
+        const now = new Date();
+        const timeDiff = endDate - now;
+
+        if (timeDiff <= 0) {
+          setTimeRemaining("Project completed");
+          return;
+        }
+
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((timeDiff / (1000 * 60)) % 60);
+        const seconds = Math.floor((timeDiff / 1000) % 60);
+
+        setTimeRemaining(
+          `${days}d ${hours}h ${minutes}m ${seconds}s remaining`
+        );
+      };
+
+      updateRemainingTime();
+      const intervalId = setInterval(updateRemainingTime, 1000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [projectStatus]);
 
   const DATA = projectStatus
     ? [
@@ -80,23 +120,55 @@ const ReportScreen = () => {
     : [];
 
   const formatProductivityData = (productivity) => {
-    return productivity.map((user) => ({
-      userName: user.userName,
-      completedTasks: user.completedTasks,
-    }));
+    let totalCompletedTasks = 0;
+    let totalIncompleteTasks = 0;
+    let totalInProgressTasks = 0;
+    const formattedData = productivity.map((user) => {
+      totalCompletedTasks += user.completedTasks;
+      totalIncompleteTasks += user.incompleteTasks;
+      totalInProgressTasks += user.inProgressTasks;
+      return {
+        userName: user.userName,
+        completedTasks: user.completedTasks,
+        inProgressTasks: user.inProgressTasks,
+        incompleteTasks: user.incompleteTasks,
+      };
+    });
+
+    formattedData.push({
+      userName: "Total",
+      completedTasks: totalCompletedTasks,
+      incompleteTasks: totalIncompleteTasks,
+      inProgressTasks: totalInProgressTasks,
+    });
+
+    return formattedData;
   };
 
-  const data = teamProductivity ? formatProductivityData(teamProductivity) : [];  
+  const data = teamProductivity ? formatProductivityData(teamProductivity) : [];
+
+  const tableHead = [
+    "Task ID",
+    "Task Title",
+    "Project Name",
+    "Days in Progress",
+  ];
+
+  const tableData = bottlenecks?.map((bottleneck) => [
+    bottleneck.taskId,
+    bottleneck.taskTitle,
+    bottleneck.projectName,
+    bottleneck.daysInProgress,
+  ]);
 
   function openModal() {
-    console.log("opening modal");
     setModalVisible(true);
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.chartContainer}>
-        <Text style={styles.title}>Project Status</Text>
+        <Text style={styles.title}>{projectName}Status</Text>
         <Text style={{ color: "gray", marginBottom: 20 }}>
           According to the tasks completed.
         </Text>
@@ -119,13 +191,15 @@ const ReportScreen = () => {
                 marginTop: 20,
               }}
             >
-              <Text>To do</Text>
+              <Text></Text>
               <View style={[styles.statusStyle, { backgroundColor: "gray" }]} />
-              <Text>Done</Text>
+              <Text>To Do</Text>
               <View
                 style={[styles.statusStyle, { backgroundColor: "green" }]}
               />
+              <Text>Done</Text>
             </View>
+            <Text style={styles.timeRemaining}>{timeRemaining}</Text>
           </>
         ) : (
           <Spinner />
@@ -134,37 +208,63 @@ const ReportScreen = () => {
 
       <View style={styles.chartContainer}>
         <Text style={styles.title}>Team Productivity</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignSelf: "center",
+            alignItems: "center",
+            gap: 10,
+            marginTop: 20,
+          }}
+        >
+          <View style={[styles.statusStyle, { backgroundColor: "red" }]} />
+          <Text>To Do</Text>
+          <View style={[styles.statusStyle, { backgroundColor: "orange" }]} />
+          <Text>In Progress</Text>
+          <View style={[styles.statusStyle, { backgroundColor: "green" }]} />
+          <Text>Done</Text>
+        </View>
         {data.length > 0 ? (
           <>
             <CartesianChart
               data={data}
               xKey="userName"
-              yKeys={["completedTasks"]}
+              yKeys={["completedTasks", "incompleteTasks", "inProgressTasks"]}
               padding={16}
               domainPadding={{ left: 50, right: 50, top: 30 }}
               axisOptions={{
                 font,
                 tickCount: { x: 0, y: 4 },
-                formatXLabel: (x) => `User`,
+                formatXLabel: (x) => (x === "total" ? x : "user"),
                 formatYLabel: (d) => `${d} tasks`,
               }}
             >
-              {({ points, chartBounds }) => {
+              {({ points }) => {
                 return (
-                  <Bar
-                    chartBounds={chartBounds}
-                    points={points.completedTasks}
-                    roundedCorners={{ topLeft: 5, topRight: 5 }}
-                  >
-                    <LinearGradient
-                      start={vec(0, 0)}
-                      end={vec(0, 400)}
-                      colors={["#4f9d9d", "#4f9d9d50"]}
+                  <>
+                    <Line
+                      points={points.completedTasks}
+                      color="green"
+                      strokeWidth={3}
+                      animate={{ type: "timing", duration: 300 }}
                     />
-                  </Bar>
+                    <Line
+                      points={points.inProgressTasks}
+                      color="orange"
+                      strokeWidth={3}
+                      animate={{ type: "timing", duration: 300 }}
+                    />
+                    <Line
+                      points={points.incompleteTasks}
+                      color="red"
+                      strokeWidth={3}
+                      animate={{ type: "timing", duration: 300 }}
+                    />
+                  </>
                 );
               }}
             </CartesianChart>
+
             <TouchableOpacity
               style={{
                 backgroundColor: "gray",
@@ -193,16 +293,25 @@ const ReportScreen = () => {
 
       <View style={styles.bottlenecksContainer}>
         <Text style={styles.title}>Bottlenecks</Text>
-        <Text style={styles.bottlenecksText}>
-          {bottlenecks ? JSON.stringify(bottlenecks) : "Loading..."}
-        </Text>
+        {isLoading ? (
+          <Spinner />
+        ) : bottlenecks?.length === 0 ? (
+          <Text style={{ color: "gray", textAlign: "justify" }}>
+            No bottlenecks were found. Tasks that have not had any changes for a
+            period of 7 days will appear unless they are completed.
+          </Text>
+        ) : (
+          <Table borderStyle={{ borderWidth: 1 }}>
+            <Row data={tableHead} style={styles.head} textStyle={styles.text} />
+            <Rows data={tableData} textStyle={styles.text} />
+          </Table>
+        )}
       </View>
 
       <Modal
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => {
-          console.log("Modal close requested"); // Verificar si esta línea se imprime
           setModalVisible(false);
         }}
       >
@@ -217,14 +326,37 @@ const ReportScreen = () => {
               />
             </View>
             <ScrollView style={styles.modalContent}>
-              {teamProductivity?.map(({ userId, userName, completedTasks }) => (
-                <View key={userId} style={styles.taskContainer}>
-                  <Text style={styles.userText}>👤 {userName}</Text>
-                  <Text style={styles.taskText}>
-                    ✅ Completed tasks: {completedTasks}
-                  </Text>
-                </View>
-              ))}
+              {teamProductivity && teamProductivity.length > 0 ? (
+                teamProductivity.map(
+                  ({
+                    userId,
+                    userName,
+                    completedTasks,
+                    incompleteTasks,
+                    profileImage,
+                  }) => (
+                    <View key={userId} style={styles.taskContainer}>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <Image
+                          source={{ uri: profileImage }}
+                          style={styles.profileImage}
+                        />
+                        <Text style={styles.userText}>{userName}</Text>
+                      </View>
+                      <View style={{flexDirection: "row", alignItems: "center", marginTop: 10}}>
+                        <MaterialIcons name="done" size={24} color="green" />
+                        <Text style={styles.taskText}>
+                          Completed tasks: {completedTasks} of {incompleteTasks}
+                        </Text>
+                      </View>
+                    </View>
+                  )
+                )
+              ) : (
+                <Text style={styles.noDataText}>There is no productivity.</Text>
+              )}
             </ScrollView>
           </View>
         </View>
@@ -320,6 +452,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
   },
+  noDataText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#888",
+  },
   closeButton: {
     backgroundColor: "#ff5c5c",
     borderRadius: 15,
@@ -349,6 +486,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
   userText: {
     fontSize: 16,
     fontWeight: "600",
@@ -359,6 +502,14 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 5,
   },
+  timeRemaining: {
+    marginTop: 20,
+    fontSize: 16,
+    color: "red",
+    textAlign: "center",
+  },
+  head: { height: 60, backgroundColor: "#f1f8ff" },
+  text: { margin: 6 },
 });
 
 export default ReportScreen;

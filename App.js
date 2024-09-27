@@ -1,5 +1,5 @@
 // @ts-ignore
-import "react-native-reanimated"
+import "react-native-reanimated";
 import React from "react";
 import ProjectNavigation from "./src/components/Navigation/ProjectNavigation";
 import { ProjectProvider } from "./src/components/StoreProjects/ProjectContext";
@@ -19,7 +19,6 @@ import SplashScreen from "./src/components/Screens/SplashScreen";
 const Stack = createStackNavigator();
 
 export default function App() {
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>

@@ -8,12 +8,11 @@ import {
   StyleSheet,
   Alert,
   RefreshControl,
+  Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  getTasks,
-  updateTask,
-} from "../../api/endpoint";
+import { getTasks, updateTask } from "../../api/endpoint";
+import { Spinner } from "./ReportScreen";
 
 const BoardScreen = () => {
   const [tasks, setTasks] = useState([]);
@@ -22,6 +21,8 @@ const BoardScreen = () => {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState("TODO");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const fetchProjects = async () => {
     try {
@@ -40,16 +41,36 @@ const BoardScreen = () => {
     }
   };
 
+  useEffect(() => {
+    const initializeProjects = async () => {
+      await fetchProjects();
+    };
+    initializeProjects();
+  }, []);
+
   const fetchTasks = async () => {
     if (selectedProjectId) {
+      if (isInitialLoading) setIsLoading(true);
       try {
         const res = await getTasks(selectedProjectId);
         setTasks(res.data);
       } catch (error) {
         setTasks([]);
+      } finally {
+        setIsLoading(false);
+        if (isInitialLoading) setIsInitialLoading(false);
       }
     }
   };
+
+  useEffect(() => {
+    const initializeTasks = async () => {
+      if (selectedProjectId) {
+        await fetchTasks();
+      }
+    };
+    initializeTasks();
+  }, [selectedProjectId]);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -71,14 +92,6 @@ const BoardScreen = () => {
     await fetchTasks();
     setRefreshing(false);
   }, [selectedProjectId]);
-
-  useEffect(() => {
-    fetchTasks();
-  }, [selectedProjectId]);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   const updateTaskStatus = async (taskId, status) => {
     try {
@@ -136,42 +149,75 @@ const BoardScreen = () => {
 
   return (
     <View style={styles.container}>
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh}>
-        {projects.length > 0 ? (
-          <View>
-            <Text style={styles.header}>Select Project:</Text>
-            <FlatList
-              data={projects}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.projectItem,
-                    selectedProjectId === item.id
-                      ? styles.selectedProject
-                      : null,
-                  ]}
-                  onPress={() => handleProjectSelect(item.id)}
-                >
-                  <Text style={styles.projectName}>{item.projectName}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        ) : (
-          <Text style={styles.textStyle}>
-            There are no projects and tasks yet.
-          </Text>
-        )}
+      {projects.length > 0 ? (
+        <View>
+          <Text style={styles.header}>Select Project:</Text>
+          <FlatList
+            data={projects}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.projectItem,
+                  selectedProjectId === item.id ? styles.selectedProject : null,
+                ]}
+                onPress={() => handleProjectSelect(item.id)}
+              >
+                <Text style={styles.projectName}>{item.projectName}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      ) : (
+        <Text style={styles.textStyle}>There are no projects available.</Text>
+      )}
 
-        {selectedProjectId && tasks.length > 0 && (
+      {selectedProjectId ? (
+        isLoading && isInitialLoading ? (
+          <Spinner />
+        ) : tasks.length === 0 ? (
+          <Text style={styles.textStyle}>
+            {filter === "TODO" && "There are no tasks to do for this project"}
+            {filter === "IN_PROGRESS" &&
+              "There are no tasks in progress for this project"}
+            {filter === "DONE" && "There are no tasks done for this project"}
+          </Text>
+        ) : (
           <>
-            {renderFilterButtons()}
+            {tasks.length > 0 && renderFilterButtons()}
             {filteredTasks.length > 0 ? (
               <FlatList
                 data={filteredTasks}
                 renderItem={({ item }) => (
                   <View style={styles.taskContainer}>
-                    <Text style={styles.taskTitle}>{item.title}</Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Text style={styles.taskTitle}>{item.title}</Text>
+
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <Image
+                          source={{ uri: item.creator?.profileImage }}
+                          style={[styles.profileImage, { zIndex: 1 }]}
+                        />
+
+                        {item.assignee && (
+                          <Image
+                            source={{ uri: item.assignee.profileImage }}
+                            style={[
+                              styles.profileImage,
+                              { marginLeft: -20, zIndex: 0 },
+                            ]}
+                          />
+                        )}
+                      </View>
+                    </View>
+
                     <Text style={styles.taskStatus}>Status: {item.status}</Text>
 
                     {(item.creatorId === userId ||
@@ -198,6 +244,14 @@ const BoardScreen = () => {
                     )}
                   </View>
                 )}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={{ paddingBottom: 100 }}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                  />
+                }
               />
             ) : (
               <Text style={styles.textStyle}>
@@ -210,13 +264,24 @@ const BoardScreen = () => {
               </Text>
             )}
           </>
-        )}
-        {selectedProjectId && tasks.length === 0 && (
-          <Text style={styles.textStyle}>
-            There are no tasks for this project.
-          </Text>
-        )}
-      </RefreshControl>
+        )
+      ) : null}
+      <TouchableOpacity
+        style={{
+          backgroundColor: "gray",
+          alignItems: "center",
+          paddingVertical: 15,
+          borderRadius: 10,
+          marginVertical: 10,
+          position: "absolute",
+          bottom: 2,
+          left: 20,
+          right: 20,
+        }}
+        onPress={onRefresh}
+      >
+        <Text style={{ color: "white", fontWeight: "bold", fontSize: 15 }}>Update</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -231,6 +296,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 16,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
   },
   subHeader: {
     fontSize: 18,

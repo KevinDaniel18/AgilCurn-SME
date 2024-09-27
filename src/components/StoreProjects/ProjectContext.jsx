@@ -44,6 +44,7 @@ export const ProjectProvider = ({ children }) => {
       setProfileImage(res.data.profileImage);
     }
   };
+;
 
   const saveProfileImageToStorage = async (imageUri) => {
     try {

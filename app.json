@@ -21,6 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.kevsc.agilCurn",
+      "googleServicesFile": "./google-services.json",
       "permissions": ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
     },
     "web": {
@@ -28,7 +29,8 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      "expo-document-picker"
     ],
     "extra": {
       "eas": {

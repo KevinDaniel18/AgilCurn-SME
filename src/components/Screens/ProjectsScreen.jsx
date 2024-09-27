@@ -10,9 +10,13 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useProject } from "../StoreProjects/ProjectContext";
-import {  inviteUserToProjects } from "../../api/endpoint";
+import { inviteUserToProjects } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
+import Feather from "@expo/vector-icons/Feather";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 const ProjectsScreen = ({ navigation }) => {
   const { projects, deleteProject, leaveProject } = useProject();
@@ -139,6 +143,13 @@ const ProjectsScreen = ({ navigation }) => {
     }
   };
 
+  function NavigateToDocuments(index) {
+    const projectId = projects[index].id;
+    const projectName = projects[index].projectName;
+    const creatorId = projects[index].creatorId;
+    navigation.navigate("AttachDocuments", { projectId, projectName, creatorId });
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -154,32 +165,62 @@ const ProjectsScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.buttonGroup}>
                   <TouchableOpacity
-                    style={[styles.button, styles.viewButton]}
+                    style={styles.viewButton}
                     onPress={() => handleViewUsers(index)}
                   >
-                    <Text style={styles.buttonText}>View Users</Text>
+                    <View style={styles.buttonContent}>
+                      <Feather name="users" size={24} color="black" />
+                      <Text style={styles.buttonText}>View Users</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ marginTop: 10 }}
+                    onPress={() => NavigateToDocuments(index)}
+                  >
+                    <View style={styles.buttonContent}>
+                      <Ionicons
+                        name="document-attach-outline"
+                        size={24}
+                        color="black"
+                      />
+                      <Text style={styles.buttonText}>Documents</Text>
+                    </View>
                   </TouchableOpacity>
                   {project.creatorId === userId ? (
                     <>
                       <TouchableOpacity
-                        style={[styles.button, styles.inviteButton]}
+                        style={styles.inviteButton}
                         onPress={() => handleInviteUser(index)}
                       >
-                        <Text style={styles.buttonText}>Invite</Text>
+                        <View style={styles.buttonContent}>
+                          <AntDesign name="adduser" size={24} color="black" />
+                          <Text style={styles.buttonText}>Invite</Text>
+                        </View>
                       </TouchableOpacity>
+
                       <TouchableOpacity
-                        style={[styles.button, styles.deleteButton]}
+                        style={styles.deleteButton}
                         onPress={() => handleDeleteProject(index)}
                       >
-                        <Text style={styles.buttonText}>Delete</Text>
+                        <View style={styles.buttonContent}>
+                          <MaterialIcons
+                            name="delete-forever"
+                            size={24}
+                            color="black"
+                          />
+                          <Text style={styles.buttonText}>Delete</Text>
+                        </View>
                       </TouchableOpacity>
                     </>
                   ) : (
                     <TouchableOpacity
-                      style={[styles.button, styles.deleteButton]}
+                      style={styles.leaveButton}
                       onPress={() => handleLeaveProject(index)}
                     >
-                      <Text style={styles.buttonText}>Leave</Text>
+                      <View style={styles.buttonContent}>
+                        <Ionicons name="exit-outline" size={24} color="black" />
+                        <Text style={styles.buttonText}>Leave</Text>
+                      </View>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -206,13 +247,22 @@ const ProjectsScreen = ({ navigation }) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalText}>
-              {selectedIndex !== null &&
-              projects[selectedIndex] &&
-              projects[selectedIndex].creatorId === userId
-                ? "Are you sure you want to delete this project?"
-                : "Are you sure you want to leave this project?"}
-            </Text>
+            {selectedIndex !== null &&
+            projects[selectedIndex] &&
+            projects[selectedIndex].creatorId === userId ? (
+              <>
+                <Text style={styles.modalTitle}>
+                  Are you sure you want to delete this project?
+                </Text>
+                <Text style={{ marginBottom: 10 }}>
+                  All related data will be deleted, such as tasks, reports, etc.
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.modalContent}>
+                Are you sure you want to leave this project?
+              </Text>
+            )}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#FF3B30" }]}
@@ -293,6 +343,15 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingVertical: 10,
   },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalContent: {
+    fontSize: 16,
+    color: "#666",
+  },
   projectContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
@@ -316,42 +375,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  viewButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  inviteButton: {
-    backgroundColor: "#28a745",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  deleteButton: {
-    backgroundColor: "#dc3545",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+  viewButton: { marginTop: 10 },
+  inviteButton: { marginTop: 10 },
+  deleteButton: { marginTop: 10 },
+  leaveButton: { marginTop: 10 },
+  buttonContent: {
+    alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 16,
+    color: "black",
+    fontSize: 13,
   },
   textStyle: {
     textAlign: "center",

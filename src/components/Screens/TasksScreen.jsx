@@ -32,6 +32,7 @@ const TasksScreen = () => {
   const [assigneeId, setAssigneeId] = useState("");
   const [tasks, setTasks] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState("");
   const { projects } = useProject();
@@ -70,6 +71,8 @@ const TasksScreen = () => {
           [{ text: "OK" }]
         );
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -187,7 +190,10 @@ const TasksScreen = () => {
         <Text style={{ color: "red", fontSize: 10, textAlign: "center" }}>
           {error}
         </Text>
-        {tasks.length > 0 ? (
+
+        {isLoading ? (
+          <Spinner />
+        ) : tasks.length > 0 ? (
           <FlatList
             style={styles.list}
             data={tasks}
@@ -205,7 +211,6 @@ const TasksScreen = () => {
                     Assignee ID: {item.assigneeId}
                   </Text>
                 </View>
-
                 {(item.creatorId === userId ||
                   item.project.creatorId === userId) && (
                   <TouchableOpacity
@@ -223,7 +228,7 @@ const TasksScreen = () => {
             }
           />
         ) : (
-          <Spinner/>
+          <Text style={{textAlign: "center", color:"gray"}}>No tasks available.</Text>
         )}
       </View>
     </AlertNotificationRoot>

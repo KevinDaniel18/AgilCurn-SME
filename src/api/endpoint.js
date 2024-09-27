@@ -34,10 +34,9 @@ export async function loginUser(email, password) {
     await AsyncStorage.setItem("token", token);
     await AsyncStorage.setItem("userId", userId.toString());
     await AsyncStorage.setItem("userName", fullname.toString());
-    console.log("UserId stored:", userId);
     return res.data;
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 }
 
@@ -173,10 +172,61 @@ export function getProjectStatus() {
 
 export function getTeamProductivity(startDate, endDate) {
   return instance.get("/reports/teamProductivity", {
-    params: { startDate, endDate }
+    params: { startDate, endDate },
   });
 }
 
 export function getBottlenecks() {
-  return instance.get("/reports/bottlenecks")
+  return instance.get("/reports/bottlenecks");
+}
+
+export function sendTokenToBackend(expoPushToken) {
+  try {
+    const res = instance.post("/chat/save-token", { token: expoPushToken });
+    return res;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+export async function uploadDocument(projectId, formData) {
+  try {
+    const response = await instance.post(
+      `/projects/${projectId}/documents/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading document:", error.response);
+    throw error;
+  }
+}
+
+export const getProjectDocuments = async (projectId) => {
+  try {
+    const response = await instance.get(`/projects/${projectId}/documents`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching project documents:", error);
+    throw error;
+  }
+};
+
+export const deleteDocument = async (projectId, documentId) => {
+  try {
+    await instance.delete(`/projects/${projectId}/documents/${documentId}`);
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    throw error;
+  }
+};
+
+export function getDocumentDownloadUrl(projectId, documentId) {
+  return `${instance.defaults.baseURL}/projects/${projectId}/documents/${documentId}/download`;
 }

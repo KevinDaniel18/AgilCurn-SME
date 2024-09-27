@@ -30,6 +30,9 @@ export const AuthProvider = ({ children }) => {
     setToken("");
     setIsLoggedIn(false);
     await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("projects")
+    await AsyncStorage.removeItem("userId")
+    await AsyncStorage.removeItem("userName")
   };
 
   return (

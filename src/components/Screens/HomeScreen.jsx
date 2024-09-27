@@ -8,18 +8,50 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useProject } from "../StoreProjects/ProjectContext";
-import { getUserProjects } from "../../api/endpoint";
+import {
+  getBottlenecks,
+  getUserProjects,
+  sendTokenToBackend,
+} from "../../api/endpoint";
 import * as Progress from "react-native-progress";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { usePushNotifications } from "../setupNotifications";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Spinner } from "./ReportScreen";
 
 const HomeScreen = ({ navigation }) => {
   const { projects, setProjects } = useProject();
   const [refreshing, setRefreshing] = useState(false);
   const [progressValues, setProgressValues] = useState({});
   const [animatedProgressValues, setAnimatedProgressValues] = useState({});
+  const [bottleneckCounts, setBottleneckCounts] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { expoPushToken, notification } = usePushNotifications();
+
+  useEffect(() => {
+    async function expoPush() {
+      if (expoPushToken) {
+        try {
+          await sendTokenToBackend(expoPushToken);
+          console.log("expo push token enviado:", expoPushToken);
+        } catch (error) {
+          console.error("Error al enviar el token:", error);
+        }
+      }
+    }
+    expoPush();
+  }, [expoPushToken]);
+
+  useEffect(() => {
+    if (notification) {
+      console.log("Notificacion recibida", notification);
+    }
+  }, [notification]);
 
   const fetchProjects = async () => {
     setRefreshing(true);
+    setIsLoading(true);
     try {
       const userId = await AsyncStorage.getItem("userId");
       console.log("Retrieved userId from AsyncStorage:", userId);
@@ -32,6 +64,16 @@ const HomeScreen = ({ navigation }) => {
         }));
         setProjects(projects);
         await AsyncStorage.setItem("projects", JSON.stringify(projects));
+
+        const bottlenecksResponse = await getBottlenecks();
+        const bottlenecksByProject = bottlenecksResponse.data.reduce(
+          (acc, bottleneck) => {
+            acc[bottleneck.projectId] = (acc[bottleneck.projectId] || 0) + 1;
+            return acc;
+          },
+          {}
+        );
+        setBottleneckCounts(bottlenecksByProject);
       } else {
         console.error("No userId found in AsyncStorage");
       }
@@ -39,11 +81,13 @@ const HomeScreen = ({ navigation }) => {
       console.error("No userId found in AsyncStorage");
     } finally {
       setRefreshing(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchProjects();
+    console.log("fetch projects");
   }, [setProjects]);
 
   useEffect(() => {
@@ -97,7 +141,9 @@ const HomeScreen = ({ navigation }) => {
         <RefreshControl refreshing={refreshing} onRefresh={fetchProjects} />
       }
     >
-      {projects.length === 0 ? (
+      {isLoading ? (
+        <Spinner />
+      ) : projects.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>You do not have projects yet.</Text>
           <TouchableOpacity
@@ -126,8 +172,9 @@ const HomeScreen = ({ navigation }) => {
               onPress={() => {
                 navigation.navigate("ReportScreen", {
                   projectId: project.id,
-                  startDate: project.startDate,
-                  endDate: project.endDate
+                  projectName: project.projectName,
+                  startDate: project.startDate.toISOString(),
+                  endDate: project.endDate.toISOString(),
                 });
               }}
             >
@@ -153,6 +200,15 @@ const HomeScreen = ({ navigation }) => {
                 borderRadius={5}
                 height={20}
               />
+
+              {bottleneckCounts[project.id] > 0 && (
+                <View style={styles.notificationIconContainer}>
+                  <Ionicons name="notifications" size={24} color="red" />
+                  <Text style={styles.notificationText}>
+                    {bottleneckCounts[project.id]}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           ))}
         </>
@@ -208,6 +264,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666666",
     marginTop: 10,
+  },
+  notificationIconContainer: {
+    position: "absolute",
+    right: 10,
+    top: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  notificationText: {
+    marginLeft: 5,
+    color: "red",
+    fontWeight: "bold",
   },
 });
 

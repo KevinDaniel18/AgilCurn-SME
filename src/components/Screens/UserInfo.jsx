@@ -51,13 +51,6 @@ const UserInfo = ({ route, navigation }) => {
   const handleDeleteChat = async () => {
     try {
       await deleteChat(currentUser, user.id);
-      Toast.show({
-        type: "success",
-        text1: "Chat Deleted",
-        text2: "The chat has been deleted successfully.",
-        autoHide: true,
-        position: "top",
-      });
       navigation.goBack();
     } catch (error) {
       console.error("Error deleting chat:", error);

@@ -10,14 +10,13 @@ import {
 import { getInvitedUsers } from "../../api/endpoint";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import io from "socket.io-client";
-import { EXPO_PRODUCTION_API_MESSAGE_URL, EXPO_PUBLIC_API_URL } from "@env";
+import { Spinner } from "../Screens/ReportScreen";
 
 const UserListScreen = ({ navigation, route }) => {
   const { projectId } = route.params;
   const [users, setUsers] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchCurrentUserId = async () => {
@@ -31,14 +30,18 @@ const UserListScreen = ({ navigation, route }) => {
   useEffect(() => {
     if (projectId) {
       const fetchUsers = async () => {
+        setIsLoading(true);
         try {
           const response = await getInvitedUsers(projectId);
           const filteredUsers = response.data.filter(
             (user) => user.id !== currentUserId
           );
           setUsers(filteredUsers);
+
         } catch (error) {
           console.error("Error fetching users:", error);
+        } finally {
+          setIsLoading(false);
         }
       };
 
@@ -47,32 +50,6 @@ const UserListScreen = ({ navigation, route }) => {
       }
     }
   }, [projectId, currentUserId]);
-
-  useEffect(() => {
-    const initializeSocket = async () => {
-      const socket = io(EXPO_PUBLIC_API_URL, {
-        query: { token: await AsyncStorage.getItem("token") },
-        transports: ["websocket"],
-      });
-
-      socket.on("userStatus", ({ id, status }) => {
-        setOnlineUsers((prev) => {
-          const newOnlineUsers = new Set(prev);
-          if (status === "online") {
-            newOnlineUsers.add(id);
-          } else {
-            newOnlineUsers.delete(id);
-          }
-          return newOnlineUsers;
-        });
-      });
-
-      return () => {
-        socket.disconnect();
-      };
-    };
-    initializeSocket();
-  }, []);
 
   const handleSelectUser = (user) => {
     navigation.navigate("MessageScreen", {
@@ -83,7 +60,9 @@ const UserListScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      {users.length > 0 ? (
+      {isLoading ? (
+        <Spinner />
+      ) : users.length > 0 ? (
         <FlatList
           data={users}
           keyExtractor={(item) => item.id.toString()}
@@ -110,16 +89,7 @@ const UserListScreen = ({ navigation, route }) => {
                   />
                 )}
                 <Text style={styles.userName}>{item.fullname}</Text>
-                <View
-                  style={[
-                    styles.statusIndicator,
-                    {
-                      backgroundColor: onlineUsers.has(item.id)
-                        ? "green"
-                        : "gray",
-                    },
-                  ]}
-                />
+                
               </TouchableOpacity>
             );
           }}
@@ -150,18 +120,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
-  },
-  userItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    marginBottom: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   userItem: {
     flexDirection: "row",
