@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Button,
   StyleSheet,
   Modal,
   TextInput,
-  Animated,
   Text,
   TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
 } from "react-native";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
 import { deleteAccountByEmailAndPassword } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../AuthContext/AuthContext";
 import { recoverPassword } from "../../api/endpoint";
+import Feather from "@expo/vector-icons/Feather";
 
 const ManageAccount = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isRecoverPasswordModalVisible, setIsRecoverPasswordModalVisible] =
     useState(false);
   const [email, setEmail] = useState("");
@@ -24,7 +25,6 @@ const ManageAccount = () => {
   const [error, setError] = useState("");
   const [token, setToken] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
-  const fadeAnim = new Animated.Value(0);
   const { logout } = useAuth();
 
   useEffect(() => {
@@ -39,28 +39,7 @@ const ManageAccount = () => {
     getToken();
   }, []);
 
-  useEffect(() => {
-    if (isModalVisible || isRecoverPasswordModalVisible) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [isModalVisible, isRecoverPasswordModalVisible]);
-
-  const handleDeleteAccount = () => {
-    setIsModalVisible(true);
-    fadeAnim.setValue(1);
-  };
-
-  const handleSubmit = async () => {
+  const handleDeleteAccount = async () => {
     try {
       if (!email.trim() || !password.trim()) {
         Toast.show({
@@ -78,7 +57,6 @@ const ManageAccount = () => {
         setError("This is not your account");
         setShowErrorModal(true);
       } else {
-        setIsModalVisible(false);
         logout();
       }
     } catch (error) {
@@ -90,23 +68,11 @@ const ManageAccount = () => {
       }
       setShowErrorModal(true);
     }
-    setIsModalVisible(false);
     setEmail("");
     setPassword("");
   };
 
-  const onRequestClose = () => {
-    setIsModalVisible(false);
-    setShowErrorModal(false);
-    setIsRecoverPasswordModalVisible(false);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalVisible(false);
-    setIsRecoverPasswordModalVisible(false);
-  };
-
-  const recoverPass = async () => {
+  const handleRecoverPass = async () => {
     try {
       if (!email.trim()) {
         Toast.show({
@@ -155,195 +121,254 @@ const ManageAccount = () => {
       });
     }
   };
+
+  const renderModal = (
+    visible,
+    title,
+    onClose,
+    onSubmit,
+    submitText,
+    showPassword = false
+  ) => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={visible}
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            {showPassword && (
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                secureTextEntry={true}
+                value={password}
+                onChangeText={setPassword}
+              />
+            )}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={onClose}
+              >
+                <Text style={styles.buttonTextModal}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  styles.submitButton,
+                  { backgroundColor: showPassword ? "#ff6b6b" : "#28a745" },
+                ]}
+                onPress={onSubmit}
+              >
+                <Text style={styles.buttonTextModal}>{submitText}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+        <Toast/>
+      </Modal>
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recover Password</Text>
-      <View style={styles.box}>
-        <Text style={styles.boxText}>
-          If you do not remember your password you can recover it with your
-          registered email.
-        </Text>
-        <Button
-          title="Recover"
-          onPress={() => setIsRecoverPasswordModalVisible(true)}
-          color="#28a745"
-        />
-      </View>
-
-      <Text style={styles.title}>Delete Account</Text>
-      <View style={styles.box}>
-        <Text style={styles.boxText}>
-          This action is irreversible. Your projects and information will be
-          deleted.
-        </Text>
-        <Button
-          title="Delete Account"
-          onPress={handleDeleteAccount}
-          color="#ff6b6b"
-        />
-      </View>
-
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={onRequestClose}
-      >
-        <View style={styles.centeredView}>
-          <Animated.View style={{ ...styles.modalView, opacity: fadeAnim }}>
-            <Text style={styles.modalText}>
-              Enter your email and password to delete your account
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recover Password</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardText}>
+              If you do not remember your password you can recover it with your
+              registered email.
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={(text) => setEmail(text)}
-              autoCapitalize="none"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              secureTextEntry={true}
-              value={password}
-              onChangeText={(text) => setPassword(text)}
-            />
-            <View style={styles.buttonContent}>
-              <Button title="Cancel" onPress={handleCloseModal} color="#999" />
-              <Button
-                title="Delete Account"
-                onPress={handleSubmit}
-                color="#ff6b6b"
-              />
-            </View>
-          </Animated.View>
-        </View>
-        <Toast />
-      </Modal>
-
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={isRecoverPasswordModalVisible}
-        onRequestClose={onRequestClose}
-      >
-        <View style={styles.centeredView}>
-          <Animated.View style={{ ...styles.modalView, opacity: fadeAnim }}>
-            <Text style={styles.modalText}>
-              Enter your email to recover your password
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={(text) => setEmail(text)}
-              autoCapitalize="none"
-            />
-            <View style={styles.buttonContent}>
-              <Button title="Cancel" onPress={handleCloseModal} color="#999" />
-              <Button
-                title="Send Recovery Email"
-                onPress={recoverPass}
-                color="#28a745"
-              />
-            </View>
-          </Animated.View>
-        </View>
-        <Toast />
-      </Modal>
-
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={showErrorModal}
-        onRequestClose={() => setShowErrorModal(false)}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.textError}>{error}</Text>
-            <TouchableOpacity onPress={()=>setShowErrorModal(false)}>
-              <Text style={{color: "red", fontWeight: "bold"}}>Ok</Text>
+            <TouchableOpacity
+              style={[styles.button, styles.recoverButton]}
+              onPress={() => setIsRecoverPasswordModalVisible(true)}
+            >
+              <Feather name="lock" size={24} color="black" />
+              <Text style={styles.buttonText}>Recover Password</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Delete Account</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardText}>
+              This action is irreversible. Your projects and information will be
+              deleted.
+            </Text>
+            <TouchableOpacity
+              style={[styles.button, styles.deleteButton]}
+              onPress={() => setIsDeleteModalVisible(true)}
+            >
+              <Feather name="trash-2" size={20} color="white" />
+              <Text style={styles.buttonText}>Delete Account</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {renderModal(
+          isRecoverPasswordModalVisible,
+          "Recover Password",
+          () => setIsRecoverPasswordModalVisible(false),
+          handleRecoverPass,
+          "Send Recovery Email"
+        )}
+
+        {renderModal(
+          isDeleteModalVisible,
+          "Delete Account",
+          () => setIsDeleteModalVisible(false),
+          handleDeleteAccount,
+          "Delete",
+          true
+        )}
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showErrorModal}
+          onRequestClose={() => setShowErrorModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                style={[styles.button, styles.errorButton]}
+                onPress={() => setShowErrorModal(false)}
+              >
+                <Text style={styles.buttonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f0f2f5",
+  },
+  scrollContent: {
     padding: 20,
   },
-  box: {
-    width: "90%",
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 12,
+  },
+  card: {
     backgroundColor: "white",
-    padding: 25,
     borderRadius: 12,
-    marginBottom: 20,
+    padding: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  boxText: {
-    marginBottom: 15,
+  cardText: {
+    fontSize: 16,
     color: "#555",
-    lineHeight: 20,
+    marginBottom: 16,
+    lineHeight: 24,
   },
-  centeredView: {
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 8,
+  },
+  buttonTextModal: {
+    textAlign: "center",
+    color: "white",
+    fontWeight: "bold",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  recoverButton: {
+    backgroundColor: "#28a745",
+  },
+  deleteButton: {
+    backgroundColor: "#ff6b6b",
+  },
+  modalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  title: {
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 24,
+    width: "85%",
+    alignItems: "center",
+  },
+  modalTitle: {
     fontSize: 20,
     fontWeight: "600",
+    marginBottom: 16,
     color: "#333",
-    marginBottom: 10,
-  },
-  modalView: {
-    width: "80%",
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 20,
   },
   input: {
-    height: 40,
     width: "100%",
-    marginVertical: 10,
+    height: 48,
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    marginBottom: 12,
   },
-  buttonContent: {
+  modalButtons: {
     flexDirection: "row",
-    marginTop: 20,
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     width: "100%",
+    marginTop: 16,
   },
-  textError: {
-    marginBottom: 10,
+  cancelButton: {
+    backgroundColor: "#999",
+    flex: 1,
+    marginRight: 8,
+  },
+  submitButton: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  errorButton: {
+    backgroundColor: "#ff6b6b",
+    paddingHorizontal: 24,
   },
 });
 

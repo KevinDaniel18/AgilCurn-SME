@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  LayoutAnimation,
 } from "react-native";
 import { getInvitedUsers } from "../../api/endpoint";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Spinner } from "../Screens/ReportScreen";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 
 const UserListScreen = ({ navigation, route }) => {
   const { projectId } = route.params;
@@ -37,11 +40,11 @@ const UserListScreen = ({ navigation, route }) => {
             (user) => user.id !== currentUserId
           );
           setUsers(filteredUsers);
-
         } catch (error) {
           console.error("Error fetching users:", error);
         } finally {
           setIsLoading(false);
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         }
       };
 
@@ -55,7 +58,26 @@ const UserListScreen = ({ navigation, route }) => {
     navigation.navigate("MessageScreen", {
       selectedUser: user,
       currentUser: currentUserId,
+      projectId: projectId,
     });
+  };
+
+  const getRoleIcon = (roles, projectId) => {
+    // Filtrar los roles asociados al projectId actual
+    const role = roles.find((r) => r.projectId === projectId);
+
+    if (!role) return null;
+
+    switch (role.roleId) {
+      case 1: // Product Owner
+        return <FontAwesome6 name="crown" size={24} color="black" />;
+      case 2: // Scrum Master
+        return <FontAwesome5 name="user-cog" size={24} color="black" />;
+      case 3: // Developer
+        return <FontAwesome6 name="code" size={24} color="black" />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -74,7 +96,11 @@ const UserListScreen = ({ navigation, route }) => {
               >
                 {item.profileImage ? (
                   <Image
-                    source={{ uri: item.profileImage || "default_image_url" }}
+                    source={
+                      item.profileImage
+                        ? { uri: item.profileImage }
+                        : require("../../../assets/defaultProfile.jpg")
+                    }
                     style={styles.profileImage}
                     onError={(e) =>
                       console.log("Image load error:", e.nativeEvent.error)
@@ -89,7 +115,12 @@ const UserListScreen = ({ navigation, route }) => {
                   />
                 )}
                 <Text style={styles.userName}>{item.fullname}</Text>
-                
+
+                {getRoleIcon(item.roles, projectId) && (
+                  <View style={styles.roleIcon}>
+                    {getRoleIcon(item.roles, projectId)}
+                  </View>
+                )}
               </TouchableOpacity>
             );
           }}
@@ -134,6 +165,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    position: "relative",
   },
   profileImage: {
     width: 40,
@@ -143,6 +175,10 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
+  },
+  roleIcon: {
+    position: "absolute",
+    right: 10,
   },
   statusIndicator: {
     width: 10,

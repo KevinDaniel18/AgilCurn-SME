@@ -9,16 +9,17 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import React from "react";
+import React, { useEffect } from "react";
 import { deleteChat } from "../../api/endpoint";
+import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 
 const UserInfo = ({ route, navigation }) => {
-  const { user, currentUser } = route.params;
+  const { user, currentUser, projectId } = route.params;
 
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text>No user information available</Text>
+        <Text style={styles.noUserText}>No user information available</Text>
       </View>
     );
   }
@@ -64,59 +65,146 @@ const UserInfo = ({ route, navigation }) => {
     }
   };
 
+  React.useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={confirmDeleteChat}>
+          <SimpleLineIcons
+            name="options-vertical"
+            size={24}
+            color="black"
+            style={{ marginRight: 10 }}
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, confirmDeleteChat]);
+
   return (
     <View style={styles.container}>
-      <Image
-        source={{
-          uri: user.profileImage || "https://via.placeholder.com/150",
-        }}
-        style={styles.profilePicture}
-      />
-      <Text style={styles.name}>{user.name}</Text>
-      <Text style={styles.id}>ID: {user.id}</Text>
-      <TouchableOpacity onPress={copyToClipboard}>
-        <Feather name="copy" size={24} color="#007bff" />
-      </TouchableOpacity>
+      <View style={styles.header}>
+        <Image
+          source={
+            user.profileImage
+              ? { uri: user.profileImage }
+              : require("../../../assets/defaultProfile.jpg")
+          }
+          style={styles.profilePicture}
+        />
+        <Text style={styles.username}>{user.fullname}</Text>
+      </View>
+
+      <View style={styles.infoContainer}>
+        <InfoItem title="Username" content={user.fullname} />
+        <InfoItem
+          title="ID"
+          content={user.id}
+          rightElement={
+            <TouchableOpacity onPress={copyToClipboard}>
+              <Feather name="copy" size={20} color="#007bff" />
+            </TouchableOpacity>
+          }
+        />
+        {user.roles.length > 0 && (
+          <InfoItem
+            title="Role"
+            content={user.roles
+              .filter((role) => role.projectId === projectId)
+              .map((role) => `${role.role.roleName}: ${role.role.description}`)
+              .join("\n")}
+          />
+        )}
+      </View>
+
       <TouchableOpacity style={styles.deleteButton} onPress={confirmDeleteChat}>
         <Text style={styles.deleteButtonText}>Delete Chat</Text>
       </TouchableOpacity>
+
       <Toast />
     </View>
   );
 };
 
+const InfoItem = ({ title, content, rightElement }) => (
+  <View style={styles.infoItem}>
+    <Text style={styles.infoTitle}>{title}</Text>
+    <View style={styles.infoContent}>
+      <Text style={styles.infoText}>{content}</Text>
+      {rightElement}
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  header: {
+    backgroundColor: "#FFC866",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F5F5F5",
-    padding: 20,
+    padding: 30,
+    paddingTop: 60,
   },
   profilePicture: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    marginBottom: 10,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: "#fff",
+    marginBottom: 16,
   },
-  name: {
+  username: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 10,
+    color: "#fff",
   },
-  id: {
-    fontSize: 18,
+  infoContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    margin: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  infoItem: {
+    marginBottom: 16,
+  },
+  infoTitle: {
+    fontSize: 14,
     color: "#666",
+    marginBottom: 4,
+  },
+  infoContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  infoText: {
+    fontSize: 18,
+    color: "#333",
+    fontWeight: "500",
   },
   deleteButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: "#FF4D4D",
+    backgroundColor: "#ff4d4d",
     borderRadius: 8,
+    padding: 16,
+    margin: 16,
+    alignItems: "center",
   },
   deleteButtonText: {
-    color: "#FFFFFF",
+    color: "#fff",
     fontSize: 18,
+    fontWeight: "bold",
+  },
+  noUserText: {
+    fontSize: 18,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 50,
   },
 });
 

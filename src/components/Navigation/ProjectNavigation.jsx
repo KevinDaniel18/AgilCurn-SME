@@ -11,6 +11,8 @@ import { TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import ReportScreen from "../Screens/ReportScreen";
 import AttachDocuments from "../Screens/AttachDocuments";
+import TaskList from "../Screens/TaskList";
+import SprintList from "../Screens/SprintList";
 
 const Stack = createStackNavigator();
 
@@ -22,7 +24,11 @@ const ProjectNavigation = () => {
         name="Navbar"
         component={Navbar}
       />
-      <Stack.Screen name="CreateProjects" component={CreateProjects} options={{title: "Create Projects"}} />
+      <Stack.Screen
+        name="CreateProjects"
+        component={CreateProjects}
+        options={{ title: "Create Projects" }}
+      />
       <Stack.Screen
         name="MessageScreen"
         component={MessageScreen}
@@ -34,6 +40,7 @@ const ProjectNavigation = () => {
                 navigation.navigate("UserInfo", {
                   user: route.params.selectedUser,
                   currentUser: route.params.currentUser,
+                  projectId: route.params.projectId,
                 });
               }}
             >
@@ -58,9 +65,33 @@ const ProjectNavigation = () => {
         component={ManageAccount}
         options={{ title: "Manage Account" }}
       />
-      <Stack.Screen name="UserInfo" component={UserInfo} options={{title: "Info"}} />
-      <Stack.Screen name="ReportScreen" component={ReportScreen} options={{title: "Reports"}} />
-      <Stack.Screen name="AttachDocuments" component={AttachDocuments} options={{title: "Documents"}} />
+      <Stack.Screen
+        name="UserInfo"
+        component={UserInfo}
+        options={{
+          title: "Info",
+        }}
+      />
+      <Stack.Screen
+        name="ReportScreen"
+        component={ReportScreen}
+        options={{ title: "Reports" }}
+      />
+      <Stack.Screen
+        name="AttachDocuments"
+        component={AttachDocuments}
+        options={{ title: "Documents" }}
+      />
+      <Stack.Screen
+        name="TaskList"
+        component={TaskList}
+        options={{ title: "Task List" }}
+      />
+      <Stack.Screen
+        name="SprintList"
+        component={SprintList}
+        options={{ title: "Sprint List" }}
+      />
     </Stack.Navigator>
   );
 };

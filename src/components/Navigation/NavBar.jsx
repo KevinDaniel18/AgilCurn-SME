@@ -10,7 +10,7 @@ import BoardScreen from "../Screens/BoardScreen";
 import { useProject } from "../StoreProjects/ProjectContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUserById } from "../../api/endpoint";
-import CalendarScreen from "../Screens/CalendarScreen";
+import SprintPlanning from "../Screens/SprintPlanning";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MeetScreen from "../Screens/MeetScreen";
 
@@ -151,8 +151,8 @@ const Navbar = ({ navigation }) => {
       </Drawer.Screen>
       <>
         <Drawer.Screen
-          name="Calendar"
-          component={CalendarScreen}
+          name="Sprint"
+          component={SprintPlanning}
           options={{
             drawerIcon: () => {
               return <AntDesign name="calendar" size={24} color="black" />;

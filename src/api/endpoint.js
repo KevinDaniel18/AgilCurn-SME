@@ -36,7 +36,7 @@ export async function loginUser(email, password) {
     await AsyncStorage.setItem("userName", fullname.toString());
     return res.data;
   } catch (error) {
-    console.log(error);
+    console.log("error papuh", error);
   }
 }
 
@@ -89,8 +89,8 @@ export function leaveProjectFromAPI(projectId, userId) {
   });
 }
 
-export function inviteUserToProjects(projectId, userId) {
-  return instance.post(`/projects/${projectId}/invite`, { userId });
+export function inviteUserToProjects(projectId, userId, roleId) {
+  return instance.post(`/projects/${projectId}/invite`, { userId, roleId });
 }
 
 export function getUserProjects(userId) {
@@ -118,7 +118,8 @@ export function postTasks(
   projectId,
   description = "",
   assigneeId = null,
-  creatorId
+  creatorId,
+  sprintId
 ) {
   return instance.post(`/tasks`, {
     title,
@@ -126,6 +127,7 @@ export function postTasks(
     description,
     assigneeId,
     creatorId,
+    sprintId,
   });
 }
 
@@ -170,9 +172,9 @@ export function getProjectStatus() {
   return instance.get("/reports/projectStatus");
 }
 
-export function getTeamProductivity(startDate, endDate) {
+export function getTeamProductivity(projectId, startDate, endDate) {
   return instance.get("/reports/teamProductivity", {
-    params: { startDate, endDate },
+    params: { projectId, startDate, endDate },
   });
 }
 
@@ -229,4 +231,24 @@ export const deleteDocument = async (projectId, documentId) => {
 
 export function getDocumentDownloadUrl(projectId, documentId) {
   return `${instance.defaults.baseURL}/projects/${projectId}/documents/${documentId}/download`;
+}
+
+export function postSprint(sprintData) {
+  return instance.post("/tasks/sprints", sprintData);
+}
+
+export function getSprints(projectId) {
+  return instance.get(`tasks/${projectId}/sprints`);
+}
+
+export function assignTaskToSprint(taskId, sprintId) {
+  return instance.post(`tasks/${taskId}/assign-to-sprint`, { sprintId });
+}
+
+export function removeTaskFromSprint(taskId) {
+  return instance.post(`tasks/${taskId}/remove-from-sprint`);
+}
+
+export function deleteSprint(sprintId) {
+  return instance.delete(`tasks/${sprintId}/delete-sprint`);
 }

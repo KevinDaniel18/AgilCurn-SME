@@ -8,15 +8,17 @@ import {
   ScrollView,
   TextInput,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { useProject } from "../StoreProjects/ProjectContext";
 import { inviteUserToProjects } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Toast } from "react-native-toast-message/lib/src/Toast";
+import Toast from "react-native-toast-message";
 import Feather from "@expo/vector-icons/Feather";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import DropdownSelect from "react-native-input-select";
 
 const ProjectsScreen = ({ navigation }) => {
   const { projects, deleteProject, leaveProject } = useProject();
@@ -24,7 +26,9 @@ const ProjectsScreen = ({ navigation }) => {
   const [showModal, setShowModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [invitedUserId, setInvitedUserId] = useState("");
+  const [roleId, setRoleId] = useState("");
   const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -62,11 +66,29 @@ const ProjectsScreen = ({ navigation }) => {
   const confirmInviteUser = async () => {
     if (selectedIndex !== null && projects[selectedIndex]) {
       const projectId = projects[selectedIndex].id;
+      console.log(
+        "Inviting user with ID:",
+        invitedUserId,
+        "to project:",
+        projectId,
+        "with role ID:",
+        roleId
+      );
+
       try {
-        await inviteUserToProjects(projectId, invitedUserId);
+        setLoading(true);
+        await inviteUserToProjects(projectId, invitedUserId, Number(roleId));
         alert("User invited successfully!");
+        Toast.show({
+          type: "success",
+          text1: "Done",
+          text2: "User invited successfully!",
+          autoHide: false,
+          position: "top",
+        });
         setShowInviteModal(false);
         setInvitedUserId("");
+        setRoleId("");
       } catch (error) {
         if (error.response) {
           const { status, data } = error.response;
@@ -118,6 +140,8 @@ const ProjectsScreen = ({ navigation }) => {
             position: "top",
           });
         }
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -127,7 +151,13 @@ const ProjectsScreen = ({ navigation }) => {
       const projectId = projects[selectedIndex].id;
       try {
         await leaveProject(projectId, userId);
-        alert("You have left the project.");
+        Toast.show({
+          type: "success",
+          text1: "Done",
+          text2: "You have left the project.",
+          autoHide: false,
+          position: "top",
+        });
         setShowModal(false);
       } catch (error) {
         console.error("Error leaving project:", error);
@@ -139,7 +169,8 @@ const ProjectsScreen = ({ navigation }) => {
   const handleViewUsers = (index) => {
     if (projects[index]) {
       const projectId = projects[index].id;
-      navigation.navigate("UserListScreen", { projectId });
+      const creatorId = projects[index].creatorId;
+      navigation.navigate("UserListScreen", { projectId, creatorId });
     }
   };
 
@@ -147,7 +178,11 @@ const ProjectsScreen = ({ navigation }) => {
     const projectId = projects[index].id;
     const projectName = projects[index].projectName;
     const creatorId = projects[index].creatorId;
-    navigation.navigate("AttachDocuments", { projectId, projectName, creatorId });
+    navigation.navigate("AttachDocuments", {
+      projectId,
+      projectName,
+      creatorId,
+    });
   }
 
   return (
@@ -304,20 +339,37 @@ const ProjectsScreen = ({ navigation }) => {
               onChangeText={setInvitedUserId}
               keyboardType="numeric"
             />
+            <DropdownSelect
+              label="Role"
+              placeholder="Select an option..."
+              options={[
+                { label: "Product Owner", value: 1 },
+                { label: "Scrum Master", value: 2 },
+                { label: "Developer/Invited", value: 3 },
+              ]}
+              selectedValue={roleId}
+              onValueChange={(value) => setRoleId(value)}
+              primaryColor={"green"}
+              dropdownStyle={{ borderWidth: 0 }}
+            />
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#007AFF" }]}
                 onPress={confirmInviteUser}
-                disabled={!invitedUserId.trim()}
+                disabled={!invitedUserId.trim() || loading}
               >
-                <Text
-                  style={[
-                    styles.modalButtonText,
-                    { opacity: invitedUserId.trim() ? 1 : 0.5 },
-                  ]}
-                >
-                  Invite
-                </Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text
+                    style={[
+                      styles.modalButtonText,
+                      { opacity: invitedUserId.trim() ? 1 : 0.5 },
+                    ]}
+                  >
+                    Invite
+                  </Text>
+                )}
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#E5E5E5" }]}
@@ -336,7 +388,7 @@ const ProjectsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F8F8",
+    backgroundColor: "#f0f2f5",
     paddingHorizontal: 20,
   },
   scrollContainer: {

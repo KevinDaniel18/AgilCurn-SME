@@ -1,34 +1,43 @@
-import React, { useState } from "react";
 import {
   View,
-  TextInput,
-  StyleSheet,
   Text,
+  TextInput,
+  Alert,
+  StyleSheet,
+  ScrollView,
   Modal,
-  TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import React, { useEffect, useState } from "react";
+import { postSprint } from "../../api/endpoint";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import {
-  ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
-} from "react-native-alert-notification";
-import { useProject } from "./StoreProjects/ProjectContext";
-import { postProjects } from "../api/endpoint";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useProject } from "../StoreProjects/ProjectContext";
+import DropdownSelect from "react-native-input-select";
+import { TouchableOpacity } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { LinearGradient } from "expo-linear-gradient";
 
-const CreateProjects = () => {
-  const [projectName, setProjectName] = useState("");
+const SprintPlanning = ({ navigation }) => {
+  const [sprintName, setSprintName] = useState("");
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [errorModal, setErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const { addProject } = useProject();
+  const { projects } = useProject();
+
+  const selectedProject = projects.find(
+    (project) => project.id === selectedProjectId
+  );
+
+  const projectOptions = projects.map((project) => ({
+    label: project.projectName,
+    value: project.id,
+  }));
 
   const onChangeStartDate = (event, selectedDate) => {
     const currentDate = selectedDate || startDate;
@@ -40,6 +49,17 @@ const CreateProjects = () => {
     const currentDate = selectedDate || endDate;
     setShowEndPicker(false);
     setEndDate(currentDate);
+  };
+
+  const validateSprintName = () => {
+    const minLength = 3;
+    if (sprintName.trim().length < minLength) {
+      setErrorMessage(
+        `El nombre del sprint debe tener al menos ${minLength} caracteres.`
+      );
+      return false;
+    }
+    return true;
   };
 
   function validateDate() {
@@ -56,23 +76,19 @@ const CreateProjects = () => {
       return false;
     }
 
-    return true;
-  }
-
-  const validateProjectName = () => {
-    const minLength = 3;
-    if (projectName.trim().length < minLength) {
+    if (selectedProject && endDate > new Date(selectedProject.endDate)) {
       setErrorMessage(
-        `El nombre del proyecto debe tener al menos ${minLength} caracteres.`
+        "The sprint end date cannot be greater than the project end date."
       );
       return false;
     }
-    return true;
-  };
 
-  const handleConfirmAndCreate = async () => {
-    if (!projectName.trim() !== "" && startDate && endDate) {
-      if (!validateProjectName()) {
+    return true;
+  }
+
+  const createSprint = async () => {
+    if (sprintName.trim() !== "" && startDate && endDate && selectedProjectId) {
+      if (!validateSprintName()) {
         setErrorModal(true);
         return;
       }
@@ -81,65 +97,82 @@ const CreateProjects = () => {
         setErrorModal(true);
         return;
       }
-
       try {
         setLoading(true);
-        const userId = await AsyncStorage.getItem("userId");
-        if (!userId) {
-          throw new Error("User ID is not available");
-        }
-
-        const response = await postProjects(
-          projectName,
-          startDate,
-          endDate,
-          parseInt(userId)
-        );
-        const createdProject = {
-          ...response.data,
-          startDate: new Date(response.data.startDate),
-          endDate: new Date(response.data.endDate),
-        };
-
-        addProject(createdProject);
-        setProjectName("");
+        await postSprint({
+          sprintName,
+          startDate: startDate,
+          endDate: endDate,
+          projectId: selectedProjectId,
+        });
+        Alert.alert("Sprint creado exitosamente");
+        setSprintName("");
         setStartDate(new Date());
         setEndDate(new Date());
+        setSelectedProjectId(null);
       } catch (error) {
-        console.error("Creating project:", error.message);
+        if (error.response) {
+          const { status, data } = error.response;
+          if (status === 403) {
+            setErrorMessage(`${data.message}`);
+          } else if (status === 404) {
+            setErrorMessage(data.message);
+          } else {
+            setErrorMessage(`${data.message}`);
+          }
+        }
+
+        setErrorModal(true);
       } finally {
         setLoading(false);
       }
-
-      Dialog.show({
-        type: ALERT_TYPE.SUCCESS,
-        title: "Success",
-        textBody: "Now you can see the status of your project in dashboard",
-        button: "close",
-      });
-      addProject({ projectName, startDate, endDate });
-      setProjectName("");
-      setStartDate(new Date());
-      setEndDate(new Date());
     } else {
       setErrorMessage("All fields are required.");
       setErrorModal(true);
     }
   };
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 10 }}
+          onPress={() => navigation.navigate("SprintList")}
+        >
+          <MaterialIcons name="view-list" size={24} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   return (
-    <AlertNotificationRoot>
-      <View style={styles.container}>
+    <ScrollView style={styles.container}>
+      <LinearGradient colors={["white", "white"]} style={styles.headerGradient}>
+        <Text style={styles.headerText}>Sprint Planning</Text>
+      </LinearGradient>
+      <View style={{ padding: 20 }}>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Project Name</Text>
+          <Text style={styles.label}>Project</Text>
+          <DropdownSelect
+            placeholder="Select a Project"
+            options={projectOptions}
+            selectedValue={selectedProjectId}
+            onValueChange={(value) => setSelectedProjectId(value)}
+            primaryColor={"green"}
+            dropdownStyle={{ borderWidth: 0 }}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Sprint Name</Text>
           <TextInput
-            placeholder="e.g., Project 1"
-            value={projectName}
-            onChangeText={(text) => setProjectName(text)}
             style={styles.input}
+            placeholder="e.g., Sprint 1"
+            value={sprintName}
+            onChangeText={setSprintName}
           />
           <Text style={styles.helperText}>
-            Enter a descriptive name for the project.
+            Enter a descriptive name for the sprint.
           </Text>
         </View>
 
@@ -158,7 +191,7 @@ const CreateProjects = () => {
               color="#007AFF"
             />
           </TouchableOpacity>
-          <Text style={styles.helperText}>The start date of the project.</Text>
+          <Text style={styles.helperText}>The start date of the sprint.</Text>
         </View>
 
         {showStartPicker && (
@@ -185,7 +218,7 @@ const CreateProjects = () => {
               color="#007AFF"
             />
           </TouchableOpacity>
-          <Text style={styles.helperText}>The project end date.</Text>
+          <Text style={styles.helperText}>The sprint end date.</Text>
         </View>
         {showEndPicker && (
           <DateTimePicker
@@ -197,27 +230,18 @@ const CreateProjects = () => {
           />
         )}
 
-        <View
-          style={{ backgroundColor: "white", padding: 20, borderRadius: 10 }}
-        >
-          <Text style={{ color: "gray" }}>
-            Your Project {projectName} starts on {startDate.toLocaleString()}{" "}
-            and ends on {endDate.toLocaleString()}
-          </Text>
-        </View>
-
         <TouchableOpacity
           style={styles.createButton}
-          onPress={handleConfirmAndCreate}
+          onPress={createSprint}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.createButtonText}>Confirm and create</Text>
+            <Text style={styles.createButtonText}>Create Sprint</Text>
           )}
         </TouchableOpacity>
-
+        
         <Modal
           animationType="slide"
           transparent={true}
@@ -228,7 +252,7 @@ const CreateProjects = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>¡Atención!</Text>
+              <Text style={styles.modalTitle}>¡Attention!</Text>
               <Text style={styles.modalText}>{errorMessage}</Text>
               <TouchableOpacity
                 style={styles.modalButton}
@@ -240,7 +264,7 @@ const CreateProjects = () => {
           </View>
         </Modal>
       </View>
-    </AlertNotificationRoot>
+    </ScrollView>
   );
 };
 
@@ -248,7 +272,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F0F0F5",
+  },
+  headerGradient: {
     padding: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerText: {
     fontSize: 28,
@@ -302,7 +330,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: "white",
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "600",
   },
   modalContainer: {
@@ -346,4 +374,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreateProjects;
+export default SprintPlanning;

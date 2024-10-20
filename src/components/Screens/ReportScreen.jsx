@@ -4,10 +4,10 @@ import {
   StyleSheet,
   ScrollView,
   Modal,
-  Button,
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Pressable,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRoute } from "@react-navigation/native";
@@ -21,6 +21,8 @@ import { Table, Row, Rows } from "react-native-table-component";
 import { useFont } from "@shopify/react-native-skia";
 import inter from "../../../assets/fonts/Inter-Regular.ttf";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import { Feather } from "@expo/vector-icons";
 
 export const Spinner = () => (
   <View style={styles.spinnerContainer}>
@@ -37,6 +39,7 @@ const ReportScreen = () => {
   const [teamProductivity, setTeamProductivity] = useState(null);
   const [bottlenecks, setBottlenecks] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalBottle, setModalBottle] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState("");
@@ -53,7 +56,11 @@ const ReportScreen = () => {
         );
         setProjectStatus(filteredStatus);
 
-        const productivityResponse = await getTeamProductivity(start, end);
+        const productivityResponse = await getTeamProductivity(
+          projectId,
+          start,
+          end
+        );
         setTeamProductivity(productivityResponse.data);
 
         const bottlenecksResponse = await getBottlenecks();
@@ -165,10 +172,14 @@ const ReportScreen = () => {
     setModalVisible(true);
   }
 
+  function openBottleNeckModal() {
+    setModalBottle(true);
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.chartContainer}>
-        <Text style={styles.title}>{projectName}Status</Text>
+        <Text style={styles.title}>{projectName} Status</Text>
         <Text style={{ color: "gray", marginBottom: 20 }}>
           According to the tasks completed.
         </Text>
@@ -292,13 +303,17 @@ const ReportScreen = () => {
       </View>
 
       <View style={styles.bottlenecksContainer}>
-        <Text style={styles.title}>Bottlenecks</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <Text style={styles.title}>Bottlenecks</Text>
+          <TouchableOpacity onPress={openBottleNeckModal}>
+            <Feather name="help-circle" size={24} color="black" />
+          </TouchableOpacity>
+        </View>
         {isLoading ? (
           <Spinner />
         ) : bottlenecks?.length === 0 ? (
           <Text style={{ color: "gray", textAlign: "justify" }}>
-            No bottlenecks were found. Tasks that have not had any changes for a
-            period of 7 days will appear unless they are completed.
+            No bottlenecks were found.
           </Text>
         ) : (
           <Table borderStyle={{ borderWidth: 1 }}>
@@ -307,6 +322,29 @@ const ReportScreen = () => {
           </Table>
         )}
       </View>
+
+      <Modal
+        transparent={true}
+        visible={modalBottle}
+        onRequestClose={() => {
+          setModalBottle(false);
+        }}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text>
+              Tasks that have not had any changes for a period of 7 days will
+              appear unless they are completed.
+            </Text>
+            <Pressable
+              onPress={() => setModalBottle(false)}
+              style={styles.bottleneckInfo}
+            >
+              <Text style={{ color: "white" }}>Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         transparent={true}
@@ -319,11 +357,9 @@ const ReportScreen = () => {
           <View style={styles.modalView}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Completed tasks</Text>
-              <Button
-                title="X"
-                color="#999"
-                onPress={() => setModalVisible(false)}
-              />
+              <Pressable onPress={() => setModalVisible(false)}>
+                <AntDesign name="close" size={24} color="red" />
+              </Pressable>
             </View>
             <ScrollView style={styles.modalContent}>
               {teamProductivity && teamProductivity.length > 0 ? (
@@ -345,7 +381,13 @@ const ReportScreen = () => {
                         />
                         <Text style={styles.userText}>{userName}</Text>
                       </View>
-                      <View style={{flexDirection: "row", alignItems: "center", marginTop: 10}}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginTop: 10,
+                        }}
+                      >
                         <MaterialIcons name="done" size={24} color="green" />
                         <Text style={styles.taskText}>
                           Completed tasks: {completedTasks} of {incompleteTasks}
@@ -369,7 +411,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f0f2f5",
   },
   spinnerContainer: {
     flex: 1,
@@ -411,6 +453,12 @@ const styles = StyleSheet.create({
   bottlenecksText: {
     fontSize: 16,
     color: "#333",
+  },
+  bottleneckInfo: {
+    backgroundColor: "gray",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
   },
   statusStyle: {
     width: 10,

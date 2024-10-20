@@ -15,20 +15,24 @@ import {
 } from "./src/components/AuthContext/AuthContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SplashScreen from "./src/components/Screens/SplashScreen";
+import { StatusBar } from "react-native";
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <ProjectProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </ProjectProvider>
-      </AuthProvider>
-    </GestureHandlerRootView>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AuthProvider>
+          <ProjectProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </ProjectProvider>
+        </AuthProvider>
+      </GestureHandlerRootView>
+    </>
   );
 }
 

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  LayoutAnimation,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -43,6 +44,7 @@ const AttachDocuments = ({ route }) => {
       console.error("Error fetching documents:", error);
     } finally {
       setIsLoading(false);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }
   };
 

@@ -7,7 +7,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Animated
+  Animated,
+  StatusBar,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useProject } from "../StoreProjects/ProjectContext";
@@ -18,7 +19,6 @@ import { Feather } from "@expo/vector-icons";
 import { getUserById } from "../../api/endpoint";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../../../firebaseConfig";
-import { StatusBar } from "expo-status-bar";
 
 const Account = ({ navigation }) => {
   const [localProfileImage, setLocalProfileImage] = useState(null);
@@ -26,7 +26,7 @@ const Account = ({ navigation }) => {
   const [userId, setUserId] = useState(null);
   const [userFullName, setUserFullName] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const progressAnim = useRef(new Animated.Value(0)).current; 
+  const progressAnim = useRef(new Animated.Value(0)).current;
   const [progress, setProgress] = useState(0);
   const { logout } = useAuth();
 
@@ -85,7 +85,7 @@ const Account = ({ navigation }) => {
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      const fileType = uri.split(".").pop(); 
+      const fileType = uri.split(".").pop();
       try {
         setUploading(true);
         const downloadURL = await uploadImage(uri, fileType);
@@ -111,7 +111,8 @@ const Account = ({ navigation }) => {
       uploadTask.on(
         "state_changed",
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setProgress(progress);
           Animated.timing(progressAnim, {
             toValue: progress,
@@ -141,13 +142,13 @@ const Account = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-       <StatusBar
-        barStyle={uploading ? "light-content" : "dark-content"}
-        backgroundColor={uploading ? "#007bff" : "#f5f5f5"}
-      />
       <View style={styles.profileContainer}>
         <Image
-          source={{ uri: localProfileImage}}
+          source={
+            localProfileImage
+              ? { uri: localProfileImage }
+              : require("../../../assets/defaultProfile.jpg")
+          }
           style={styles.profileImage}
         />
         <View style={styles.profileInfo}>
@@ -157,16 +158,18 @@ const Account = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-      {uploading && ( 
+      {uploading && (
         <View style={styles.uploadingContainer}>
           <View style={styles.progressBarContainer}>
             <Animated.View
               style={[
                 styles.progressBar,
-                { width: progressAnim.interpolate({
+                {
+                  width: progressAnim.interpolate({
                     inputRange: [0, 100],
                     outputRange: ["0%", "100%"],
-                }) }
+                  }),
+                },
               ]}
             />
           </View>
@@ -199,7 +202,7 @@ const Account = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f0f2f5",
     padding: 20,
   },
   profileContainer: {

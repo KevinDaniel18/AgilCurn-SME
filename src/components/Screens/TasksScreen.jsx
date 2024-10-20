@@ -3,18 +3,22 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
   StyleSheet,
   TouchableOpacity,
-  RefreshControl,
   Alert,
+  Animated,
+  Modal,
+  LayoutAnimation,
+  ActivityIndicator,
+  ScrollView,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
-  getTasks,
   postTasks,
-  deleteTasks,
-  getAllTasks,
+  assignTaskToSprint,
+  getInvitedUsers,
 } from "../../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useProject } from "../StoreProjects/ProjectContext";
@@ -23,19 +27,56 @@ import {
   Dialog,
   AlertNotificationRoot,
 } from "react-native-alert-notification";
-import { Spinner } from "./ReportScreen";
+import ProjectSelector from "../ProjectSelector";
+import SprintSelector from "../SprintSelector";
+import DropdownSelect from "react-native-input-select";
 
-const TasksScreen = () => {
+const TasksScreen = ({ navigation }) => {
   const [task, setTask] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const [projectId, setProjectId] = useState(null);
+  const [sprintId, setSprintId] = useState(null);
+  const [selectProjectId, setSelectProjectId] = useState(null);
   const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [tasks, setTasks] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [syncingTasks, setSyncingTasks] = useState([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isTaskSectionVisible, setIsTaskSectionVisible] = useState(false);
+  const [isSprintSectionVisible, setIsSprintSectionVisible] = useState(false);
   const { projects } = useProject();
+
+  const projectOptions = projects.map((project) => ({
+    label: project.projectName,
+    value: project.id,
+  }));
+
+  const usersOptions = users.map((user) => ({
+    label: user.fullname,
+    value: user.id,
+  }));
+
+  useEffect(() => {
+    const fetchInvitedUsers = async () => {
+      if (projectId) {
+        try {
+          const response = await getInvitedUsers(projectId);
+          setUsers(response.data);
+        } catch (error) {
+          console.error("Error al obtener los usuarios invitados:", error);
+          Alert.alert(
+            "Error",
+            "No se pudieron obtener los usuarios invitados para este proyecto."
+          );
+        }
+      }
+    };
+    fetchInvitedUsers();
+  }, [projectId]);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -45,192 +86,305 @@ const TasksScreen = () => {
     fetchUserId();
   }, []);
 
-  useEffect(() => {
-    if (projects) {
-      fetchTasks(projectId);
-    } else {
-      setTasks([]);
-    }
-  }, [projects]);
-
-  const fetchTasks = async (showAlert = true) => {
-    try {
-      let res;
-      if (projectId) {
-        const userId = await AsyncStorage.getItem("userId");
-        res = await getTasks(parseInt(projectId, 10), Number(userId));
-      } else {
-        res = await getAllTasks();
-      }
-      setTasks(res.data);
-    } catch (error) {
-      if (showAlert && error.response && error.response.status === 403) {
-        Alert.alert(
-          "Error",
-          "No se pudieron obtener las tareas. Asegúrate de que el ID del proyecto es correcto y que estás invitado al proyecto.",
-          [{ text: "OK" }]
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchTasks(false);
-    setRefreshing(false);
-  };
-
   const addTask = async () => {
-    if (task.trim() !== "" && projectId.trim() !== "") {
+    if (task.trim() !== "" && projectId) {
+      setIsSyncing(true);
       try {
+        setLoading(true);
         const res = await postTasks(
           task,
-          parseInt(projectId),
+          projectId,
           description,
           assigneeId ? parseInt(assigneeId) : null,
-          userId
+          userId,
+          sprintId
         );
+        const createdTaskId = res.data.id;
+        setSyncingTasks([...syncingTasks, createdTaskId]);
         setTasks([...tasks, res.data]);
         setTask("");
-        setProjectId("");
+        setProjectId(null);
         setDescription("");
         setAssigneeId("");
-        fetchTasks(projectId);
+        setError("");
+
+        if (sprintId) {
+          try {
+            await assignTaskToSprint(createdTaskId, sprintId);
+            console.log("Tarea asignada al sprint exitosamente.");
+          } catch (error) {
+            console.error("Error al asignar tarea al sprint:", error);
+            if (error.response) {
+              const { status, data } = error.response;
+              if (status === 403) {
+                Dialog.show({
+                  type: ALERT_TYPE.WARNING,
+                  title: "Forbidden Exception",
+                  textBody: data.message,
+                  button: "Close",
+                });
+              } else if (status === 404) {
+                Dialog.show({
+                  type: ALERT_TYPE.WARNING,
+                  title: "Sprint not found",
+                  textBody: "Make sure the sprint exists.",
+                  button: "Close",
+                });
+              } else {
+                Dialog.show({
+                  type: ALERT_TYPE.WARNING,
+                  title: "Unexpected Error",
+                  textBody:
+                    "An unexpected error occurred while assigning the task to the sprint.",
+                  button: "Close",
+                });
+              }
+            }
+          }
+        }
+        setTimeout(() => {
+          setSyncingTasks((prev) => prev.filter((id) => id !== createdTaskId));
+          setIsSyncing(false);
+        }, 2000);
       } catch (error) {
         console.log(error);
-        if (error.response && error.response.status === 403) {
-          Dialog.show({
-            type: ALERT_TYPE.WARNING,
-            title: "Project not found",
-            textBody: "Make sure you own or belong to a project",
-            button: "close",
-          });
+        if (error.response) {
+          const { status, data } = error.response;
+          if (status === 403) {
+            Dialog.show({
+              type: ALERT_TYPE.WARNING,
+              title: "Forbidden Exception",
+              textBody: data.message,
+              button: "close",
+            });
+          } else if (status === 404) {
+            Dialog.show({
+              type: ALERT_TYPE.WARNING,
+              title: "Not Found Exception",
+              textBody: data.message,
+              button: "close",
+            });
+          } else {
+            Dialog.show({
+              type: ALERT_TYPE.WARNING,
+              title: "Unexpected Error",
+              textBody: "An unexpected error occurred while creating the task.",
+              button: "Close",
+            });
+          }
         }
-        if (error.response && error.response.status === 500) {
-          Dialog.show({
-            type: ALERT_TYPE.WARNING,
-            title: "User ID not found",
-            textBody: "Make sure this ID exists",
-            button: "close",
-          });
-        }
+        setSyncingTasks(syncingTasks.filter((id) => id !== "temp-task-id"));
+        setIsSyncing(false);
+      } finally {
+        setLoading(false);
       }
     } else {
       setError("Task title and Project ID are required");
     }
   };
 
-  const deleteTask = async (index) => {
-    try {
-      const taskId = tasks[index].id;
-      if (userId) {
-        await deleteTasks(taskId);
-        const newTasks = [...tasks];
-        newTasks.splice(index, 1);
-        setTasks(newTasks);
-      } else {
-        console.error("User ID is not defined");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const handleTaskChange = (text) => {
     setTask(text);
-    if (text.trim() !== "" && projectId.trim() !== "") {
+    if (text.trim() !== "" && projectId) {
       setError("");
     }
   };
 
-  const handleProjectIdChange = (text) => {
-    setProjectId(text);
-    if (task.trim() !== "" && text.trim() !== "") {
-      setError("");
+  const handleSelectProject = (id) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (selectProjectId === id) {
+      setSelectProjectId(null);
+      setSprintId(null);
+    } else {
+      setSelectProjectId(id);
+      setSprintId(null);
     }
   };
+
+  const handleSelectSprint = (id) => {
+    setSprintId(id);
+  };
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 10 }}
+          onPress={() =>
+            navigation.navigate("TaskList", {
+              userId,
+              syncingTasks,
+            })
+          }
+          disabled={isSyncing}
+        >
+          <MaterialIcons
+            name="view-list"
+            size={24}
+            color={isSyncing ? "gray" : "black"}
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, userId, syncingTasks, isSyncing]);
 
   return (
     <AlertNotificationRoot>
-      <View style={styles.container}>
-        <Text style={styles.header}>Add New Task</Text>
-        <Text style={styles.infoText}>Fields marked * are required.</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter task title*"
-          onChangeText={handleTaskChange}
-          value={task}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter project ID*"
-          onChangeText={handleProjectIdChange}
-          value={projectId.trim()}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter description (recommended)"
-          onChangeText={(text) => setDescription(text)}
-          value={description}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter assignee ID (optional)"
-          onChangeText={(text) => setAssigneeId(text)}
-          value={assigneeId.trim()}
-          keyboardType="numeric"
-        />
+      <ScrollView style={styles.container}>
+        <LinearGradient
+          colors={["white", "white"]}
+          style={styles.headerGradient}
+        >
+          <Text style={styles.headerText}>New Task</Text>
+        </LinearGradient>
+        <View style={styles.formContainer}>
+          <TouchableOpacity
+            style={styles.sectionHeader}
+            onPress={() => setIsTaskSectionVisible(!isTaskSectionVisible)}
+          >
+            <Text style={styles.sectionHeaderText}>Task Details</Text>
+            <Feather
+              name={isTaskSectionVisible ? "chevron-up" : "chevron-down"}
+              size={24}
+              color="#ff9400"
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.createTask} onPress={addTask}>
-          <Text style={{ color: "white", fontWeight: "bold" }}>Add Task</Text>
-        </TouchableOpacity>
-        <Text style={{ color: "red", fontSize: 10, textAlign: "center" }}>
-          {error}
-        </Text>
-
-        {isLoading ? (
-          <Spinner />
-        ) : tasks.length > 0 ? (
-          <FlatList
-            style={styles.list}
-            data={tasks}
-            renderItem={({ item, index }) => (
-              <View style={styles.taskContainer}>
-                <View style={styles.taskDetails}>
-                  <Text style={styles.taskTitle}>{item.title}</Text>
-                  <Text style={styles.taskDetail}>
-                    Project ID: {item.projectId}
-                  </Text>
-                  <Text style={styles.taskDetail}>
-                    Description: {item.description}
-                  </Text>
-                  <Text style={styles.taskDetail}>
-                    Assignee ID: {item.assigneeId}
-                  </Text>
-                </View>
-                {(item.creatorId === userId ||
-                  item.project.creatorId === userId) && (
-                  <TouchableOpacity
-                    style={styles.iconContainer}
-                    onPress={() => deleteTask(index)}
-                  >
-                    <Feather name="trash" size={24} color="#ff6b6b" />
-                  </TouchableOpacity>
-                )}
+          {isTaskSectionVisible && (
+            <View style={styles.sectionContent}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Task Title*</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter task title"
+                  onChangeText={handleTaskChange}
+                  value={task}
+                />
               </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Project*</Text>
+                <DropdownSelect
+                  placeholder="Select a Project"
+                  options={projectOptions}
+                  selectedValue={projectId}
+                  onValueChange={(value) => setProjectId(value)}
+                  primaryColor="#4c669f"
+                  containerStyle={styles.dropdownContainer}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Description</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Enter task description"
+                  onChangeText={(text) => setDescription(text)}
+                  value={description}
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Assignee</Text>
+                <DropdownSelect
+                  placeholder="Select an Assignee"
+                  options={usersOptions}
+                  selectedValue={assigneeId}
+                  onValueChange={(value) => setAssigneeId(value)}
+                  primaryColor="#4c669f"
+                  containerStyle={styles.dropdownContainer}
+                />
+              </View>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.sectionHeader}
+            onPress={() => setIsSprintSectionVisible(!isSprintSectionVisible)}
+          >
+            <Text style={styles.sectionHeaderText}>Sprint Details</Text>
+            <Feather
+              name={isSprintSectionVisible ? "chevron-up" : "chevron-down"}
+              size={24}
+              color="#ff9400"
+            />
+          </TouchableOpacity>
+
+          {isSprintSectionVisible && (
+            <View style={styles.sectionContent}>
+              <Text style={styles.label}>Select Project:</Text>
+              <ProjectSelector onSelectProject={handleSelectProject} selectProjectId={selectProjectId} />
+
+              {selectProjectId && (
+                <>
+                  <Text style={styles.label}>Select Sprint:</Text>
+                  <SprintSelector
+                    projectId={selectProjectId}
+                    onSelectSprint={handleSelectSprint}
+                    selectedSprintId={sprintId}
+                  />
+                </>
+              )}
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={addTask}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Add Task</Text>
             )}
-            keyExtractor={(item, index) => index.toString()}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          />
-        ) : (
-          <Text style={{textAlign: "center", color:"gray"}}>No tasks available.</Text>
-        )}
-      </View>
+          </TouchableOpacity>
+
+          {error !== "" && <Text style={styles.errorText}>{error}</Text>}
+
+          <TouchableOpacity
+            style={styles.helpButton}
+            onPress={() => setModalVisible(true)}
+          >
+            <Feather name="help-circle" size={24} color="#4c669f" />
+            <Text style={styles.helpButtonText}>How it works</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>How does it work?</Text>
+              <Text style={styles.modalSubtitle}>Roles:</Text>
+              <Text style={styles.modalText}>
+                • Product Owner: Modify and delete any task.
+              </Text>
+              <Text style={styles.modalText}>
+                • Scrum Master: Modify tasks, but not delete others' tasks.
+              </Text>
+              <Text style={styles.modalText}>
+                • Developer: Only modify or delete your own tasks.
+              </Text>
+              <Text style={styles.modalNote}>
+                Note: Developers cannot assign tasks to others or sprints.
+              </Text>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Got it</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
     </AlertNotificationRoot>
   );
 };
@@ -238,66 +392,159 @@ const TasksScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f0f2f5",
+  },
+  headerGradient: {
     padding: 20,
-    backgroundColor: "#f5f5f5",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  header: {
-    fontSize: 24,
+  headerText: {
+    fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 20,
+    color: "black",
+    textAlign: "center",
   },
-  input: {
-    height: 50,
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    backgroundColor: "#fff",
+  formContainer: {
+    padding: 20,
   },
-  list: {
-    marginTop: 20,
-  },
-  taskContainer: {
+  sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: "#ffffff",
     padding: 15,
+    borderRadius: 10,
     marginBottom: 10,
-    borderRadius: 8,
-    backgroundColor: "#fff",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  taskDetails: {
-    flex: 1,
-  },
-  taskTitle: {
+  sectionHeaderText: {
     fontSize: 18,
-    fontWeight: "500",
+    fontWeight: "600",
+    color: "black",
   },
-  infoText: {
-    fontSize: 11,
-    color: "#666",
+  sectionContent: {
+    backgroundColor: "#ffffff",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  taskDetail: {
-    fontSize: 14,
-    color: "#666",
+  inputContainer: {
+    marginBottom: 15,
   },
-  iconContainer: {
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4c669f",
+    marginBottom: 5,
+  },
+  input: {
+    backgroundColor: "#f0f2f5",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  dropdownContainer: {
+    backgroundColor: "#f0f2f5",
+    borderRadius: 8,
+  },
+  addButton: {
+    padding: 10,
+    paddingVertical: 15,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginTop: 20,
+    alignItems: "center",
+    backgroundColor: "#2196F3",
+  },
+  gradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "bold",
+  },
+  errorText: {
+    color: "#ff3b30",
+    textAlign: "center",
+    marginTop: 10,
+  },
+  helpButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  helpButtonText: {
+    color: "#4c669f",
+    marginLeft: 5,
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-    width: 30,
   },
-  createTask: {
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
-    paddingVertical: 15,
+  modalContent: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 25,
+    width: "80%",
     alignItems: "center",
-    marginVertical: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#4c669f",
+    marginBottom: 15,
+  },
+  modalSubtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#4c669f",
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    color: "#333333",
+    marginBottom: 5,
+    textAlign: "left",
+    alignSelf: "stretch",
+  },
+  modalNote: {
+    fontSize: 14,
+    color: "#ff3b30",
+    marginTop: 15,
+    textAlign: "center",
+  },
+  modalButton: {
+    backgroundColor: "#4c669f",
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    marginTop: 20,
+  },
+  modalButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

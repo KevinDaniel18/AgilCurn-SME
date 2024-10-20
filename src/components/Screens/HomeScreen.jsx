@@ -6,6 +6,8 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  LayoutAnimation,
+  StatusBar,
 } from "react-native";
 import { useProject } from "../StoreProjects/ProjectContext";
 import {
@@ -49,8 +51,10 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [notification]);
 
-  const fetchProjects = async () => {
-    setRefreshing(true);
+  const fetchProjects = async (manualRefresh = false) => {
+    if (manualRefresh) {
+      setRefreshing(true);
+    }
     setIsLoading(true);
     try {
       const userId = await AsyncStorage.getItem("userId");
@@ -82,6 +86,7 @@ const HomeScreen = ({ navigation }) => {
     } finally {
       setRefreshing(false);
       setIsLoading(false);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }
   };
 
@@ -135,85 +140,90 @@ const HomeScreen = ({ navigation }) => {
   }, [progressValues]);
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={fetchProjects} />
-      }
-    >
-      {isLoading ? (
-        <Spinner />
-      ) : projects.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>You do not have projects yet.</Text>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate("CreateProjects");
-            }}
-          >
-            <Text
-              style={{
-                color: "orange",
-                textDecorationLine: "underline",
-                fontWeight: "bold",
-                fontStyle: "italic",
-              }}
-            >
-              Add project
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          {projects.map((project, index) => (
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => fetchProjects(true)}
+          />
+        }
+      >
+        {isLoading ? (
+          <Spinner />
+        ) : projects.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>You do not have projects yet.</Text>
             <TouchableOpacity
-              style={styles.projectContainer}
-              key={index}
               onPress={() => {
-                navigation.navigate("ReportScreen", {
-                  projectId: project.id,
-                  projectName: project.projectName,
-                  startDate: project.startDate.toISOString(),
-                  endDate: project.endDate.toISOString(),
-                });
+                navigation.navigate("CreateProjects");
               }}
             >
-              <Text style={styles.projectName}>{project.projectName}</Text>
-              <Text style={styles.endDate}>
-                Start Date:{" "}
-                {project.startDate
-                  ? project.startDate.toLocaleDateString()
-                  : "Unknown"}{" "}
-                - End Date:{" "}
-                {project.endDate
-                  ? project.endDate.toLocaleDateString()
-                  : "Unknown"}
+              <Text
+                style={{
+                  color: "orange",
+                  textDecorationLine: "underline",
+                  fontWeight: "bold",
+                  fontStyle: "italic",
+                }}
+              >
+                Add project
               </Text>
-              <Text style={styles.projectId}>ID: {project.id}</Text>
-
-              <Progress.Bar
-                progress={animatedProgressValues[project.id] || 0}
-                width={300}
-                color="#007AFF"
-                unfilledColor="#dddddd"
-                borderColor="transparent"
-                borderRadius={5}
-                height={20}
-              />
-
-              {bottleneckCounts[project.id] > 0 && (
-                <View style={styles.notificationIconContainer}>
-                  <Ionicons name="notifications" size={24} color="red" />
-                  <Text style={styles.notificationText}>
-                    {bottleneckCounts[project.id]}
-                  </Text>
-                </View>
-              )}
             </TouchableOpacity>
-          ))}
-        </>
-      )}
-    </ScrollView>
+          </View>
+        ) : (
+          <>
+            {projects.map((project, index) => (
+              <TouchableOpacity
+                style={styles.projectContainer}
+                key={index}
+                onPress={() => {
+                  navigation.navigate("ReportScreen", {
+                    projectId: project.id,
+                    projectName: project.projectName,
+                    startDate: project.startDate.toISOString(),
+                    endDate: project.endDate.toISOString(),
+                  });
+                }}
+              >
+                <Text style={styles.projectName}>{project.projectName}</Text>
+                <Text style={styles.endDate}>
+                  Start Date:{" "}
+                  {project.startDate
+                    ? project.startDate.toLocaleDateString()
+                    : "Unknown"}{" "}
+                  - End Date:{" "}
+                  {project.endDate
+                    ? project.endDate.toLocaleDateString()
+                    : "Unknown"}
+                </Text>
+
+                <Progress.Bar
+                  progress={animatedProgressValues[project.id] || 0}
+                  width={300}
+                  color="#007AFF"
+                  unfilledColor="#dddddd"
+                  borderColor="transparent"
+                  borderRadius={5}
+                  height={20}
+                />
+
+                {bottleneckCounts[project.id] > 0 && (
+                  <View style={styles.notificationIconContainer}>
+                    <Ionicons name="notifications" size={24} color="red" />
+                    <Text style={styles.notificationText}>
+                      {bottleneckCounts[project.id]}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+      </ScrollView>
+    </>
   );
 };
 
@@ -222,6 +232,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 20,
     paddingHorizontal: 10,
+    backgroundColor: "#f0f2f5",
   },
   emptyContainer: {
     flex: 1,
