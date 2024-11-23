@@ -30,8 +30,7 @@
     "plugins": [
       "expo-secure-store",
       "expo-asset",
-      "expo-document-picker",
-      "@react-native-google-signin/google-signin"
+      "expo-document-picker"
     ],
     "extra": {
       "eas": {

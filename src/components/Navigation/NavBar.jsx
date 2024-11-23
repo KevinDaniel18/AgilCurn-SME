@@ -159,17 +159,6 @@ const Navbar = ({ navigation }) => {
             },
           }}
         />
-        <Drawer.Screen
-          name="Meet"
-          component={MeetScreen}
-          options={{
-            drawerIcon: () => {
-              return (
-                <Ionicons name="videocam-outline" size={24} color="black" />
-              );
-            },
-          }}
-        />
       </>
     </Drawer.Navigator>
   );

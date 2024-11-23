@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   BackHandler,
+  ActivityIndicator,
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { loginUser } from "../../api/endpoint";
@@ -20,10 +21,12 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [loading, setIsLoading] = useState(false);
 
   const navigate = useNavigation();
 
   const handleLogin = async () => {
+    setIsLoading(true);
     try {
       if (!email.trim() || !password.trim()) {
         Toast.show({
@@ -57,6 +60,8 @@ const LoginScreen = ({ navigation }) => {
         visibilityTime: 4000,
         autoHide: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -139,13 +144,22 @@ const LoginScreen = ({ navigation }) => {
       <View style={styles.actionContainer}>
         <TouchableOpacity
           onPress={handleLogin}
+          disabled={loading}
           style={{ backgroundColor: "#2196F3", padding: 15, borderRadius: 10 }}
         >
-          <Text
-            style={{ color: "white", textAlign: "center", fontWeight: "bold" }}
-          >
-            Login
-          </Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text
+              style={{
+                color: "white",
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            >
+              Login
+            </Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity onPress={navigateToRegister}>
           <Text style={styles.registerText}>

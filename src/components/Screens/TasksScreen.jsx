@@ -6,11 +6,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Animated,
   Modal,
   LayoutAnimation,
   ActivityIndicator,
   ScrollView,
+  Button,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
@@ -30,6 +30,7 @@ import {
 import ProjectSelector from "../ProjectSelector";
 import SprintSelector from "../SprintSelector";
 import DropdownSelect from "react-native-input-select";
+import Toast from "react-native-toast-message";
 
 const TasksScreen = ({ navigation }) => {
   const [task, setTask] = useState("");
@@ -102,6 +103,15 @@ const TasksScreen = ({ navigation }) => {
         const createdTaskId = res.data.id;
         setSyncingTasks([...syncingTasks, createdTaskId]);
         setTasks([...tasks, res.data]);
+
+        Toast.show({
+          type: "success",
+          text1: "Done",
+          text2: "Task created successfully!",
+          autoHide: true,
+          position: "top",
+        });
+
         setTask("");
         setProjectId(null);
         setDescription("");
@@ -237,6 +247,7 @@ const TasksScreen = ({ navigation }) => {
         >
           <Text style={styles.headerText}>New Task</Text>
         </LinearGradient>
+        <Toast />
         <View style={styles.formContainer}>
           <TouchableOpacity
             style={styles.sectionHeader}
@@ -315,7 +326,10 @@ const TasksScreen = ({ navigation }) => {
           {isSprintSectionVisible && (
             <View style={styles.sectionContent}>
               <Text style={styles.label}>Select Project:</Text>
-              <ProjectSelector onSelectProject={handleSelectProject} selectProjectId={selectProjectId} />
+              <ProjectSelector
+                onSelectProject={handleSelectProject}
+                selectProjectId={selectProjectId}
+              />
 
               {selectProjectId && (
                 <>

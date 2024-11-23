@@ -54,8 +54,9 @@ const HomeScreen = ({ navigation }) => {
   const fetchProjects = async (manualRefresh = false) => {
     if (manualRefresh) {
       setRefreshing(true);
+    } else {
+      setIsLoading(true);
     }
-    setIsLoading(true);
     try {
       const userId = await AsyncStorage.getItem("userId");
       console.log("Retrieved userId from AsyncStorage:", userId);
@@ -84,8 +85,11 @@ const HomeScreen = ({ navigation }) => {
     } catch (error) {
       console.error("No userId found in AsyncStorage");
     } finally {
-      setRefreshing(false);
-      setIsLoading(false);
+      if (manualRefresh) {
+        setRefreshing(false);
+      } else {
+        setIsLoading(false);
+      }
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }
   };
@@ -151,7 +155,7 @@ const HomeScreen = ({ navigation }) => {
           />
         }
       >
-        {isLoading ? (
+        {isLoading && !refreshing ? (
           <Spinner />
         ) : projects.length === 0 ? (
           <View style={styles.emptyContainer}>

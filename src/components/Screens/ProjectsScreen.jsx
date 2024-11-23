@@ -19,16 +19,19 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import DropdownSelect from "react-native-input-select";
+import { useRoute } from "@react-navigation/native";
 
 const ProjectsScreen = ({ navigation }) => {
   const { projects, deleteProject, leaveProject } = useProject();
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [invitedUserId, setInvitedUserId] = useState("");
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [invitedUser, setInvitedUser] = useState("");
   const [roleId, setRoleId] = useState("");
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const route = useRoute();
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -38,6 +41,12 @@ const ProjectsScreen = ({ navigation }) => {
 
     fetchUserId();
   }, []);
+
+  useEffect(() => {
+    if (route.params?.showInviteModal) {
+      setShowInviteModal(true);
+    }
+  }, [route.params]);
 
   const handleDeleteProject = (index) => {
     setSelectedIndex(index);
@@ -68,7 +77,7 @@ const ProjectsScreen = ({ navigation }) => {
       const projectId = projects[selectedIndex].id;
       console.log(
         "Inviting user with ID:",
-        invitedUserId,
+        invitedUser,
         "to project:",
         projectId,
         "with role ID:",
@@ -77,17 +86,16 @@ const ProjectsScreen = ({ navigation }) => {
 
       try {
         setLoading(true);
-        await inviteUserToProjects(projectId, invitedUserId, Number(roleId));
-        alert("User invited successfully!");
-        Toast.show({
-          type: "success",
-          text1: "Done",
-          text2: "User invited successfully!",
-          autoHide: false,
-          position: "top",
-        });
+        const isEmail = invitedUser.includes("@");
+        await inviteUserToProjects(
+          projectId,
+          Number(roleId),
+          isEmail ? null : Number(invitedUser),
+          isEmail ? invitedUser : null
+        );
         setShowInviteModal(false);
-        setInvitedUserId("");
+        setShowSuccessToast(true);
+        setInvitedUser("");
         setRoleId("");
       } catch (error) {
         if (error.response) {
@@ -115,11 +123,12 @@ const ProjectsScreen = ({ navigation }) => {
             Toast.show({
               type: "error",
               text1: "Failed to inviting user",
-              text2: "User ID does not exist",
+              text2: "User ID or email does not exist",
               autoHide: false,
               position: "top",
             });
           } else if (status === 400) {
+            console.log(data.message);
             Toast.show({
               type: "info",
               text1: "Invalid Operation",
@@ -145,6 +154,19 @@ const ProjectsScreen = ({ navigation }) => {
       }
     }
   };
+
+  useEffect(() => {
+    if (showSuccessToast) {
+      Toast.show({
+        type: "success",
+        text1: "Done",
+        text2: "User invited successfully!",
+        autoHide: false,
+        position: "top",
+      });
+      setShowSuccessToast(false);
+    }
+  }, [showSuccessToast]);
 
   const confirmLeaveProject = async () => {
     if (selectedIndex !== null && projects[selectedIndex]) {
@@ -266,6 +288,8 @@ const ProjectsScreen = ({ navigation }) => {
           <Text style={styles.textStyle}>There are no projects yet.</Text>
         )}
       </ScrollView>
+      <Toast />
+
       <TouchableOpacity
         style={styles.createButton}
         onPress={() => navigation.navigate("CreateProjects")}
@@ -278,7 +302,10 @@ const ProjectsScreen = ({ navigation }) => {
         animationType="slide"
         transparent={true}
         visible={showModal}
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={() => {
+          setShowModal(false);
+          setShowSuccessToast(true);
+        }}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -332,12 +359,13 @@ const ProjectsScreen = ({ navigation }) => {
         <View style={styles.modalContainer}>
           <Toast />
           <View style={styles.modalContent}>
-            <Text style={styles.modalText}>Enter User ID to invite:</Text>
+            <Text style={styles.modalText}>
+              Enter User ID or Email to invite:
+            </Text>
             <TextInput
               style={styles.input}
-              value={invitedUserId.trim()}
-              onChangeText={setInvitedUserId}
-              keyboardType="numeric"
+              value={invitedUser.trim()}
+              onChangeText={setInvitedUser}
             />
             <DropdownSelect
               label="Role"
@@ -356,7 +384,7 @@ const ProjectsScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#007AFF" }]}
                 onPress={confirmInviteUser}
-                disabled={!invitedUserId.trim() || loading}
+                disabled={!invitedUser.trim() || loading}
               >
                 {loading ? (
                   <ActivityIndicator size="small" color="white" />
@@ -364,7 +392,7 @@ const ProjectsScreen = ({ navigation }) => {
                   <Text
                     style={[
                       styles.modalButtonText,
-                      { opacity: invitedUserId.trim() ? 1 : 0.5 },
+                      { opacity: invitedUser.trim() ? 1 : 0.5 },
                     ]}
                   >
                     Invite

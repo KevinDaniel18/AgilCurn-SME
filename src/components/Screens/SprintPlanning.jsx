@@ -26,7 +26,9 @@ const SprintPlanning = ({ navigation }) => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [errorModal, setErrorModal] = useState(false);
+  const [sucessModal, setSucessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [sucessMessage, setSucessMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const { projects } = useProject();
 
@@ -55,7 +57,7 @@ const SprintPlanning = ({ navigation }) => {
     const minLength = 3;
     if (sprintName.trim().length < minLength) {
       setErrorMessage(
-        `El nombre del sprint debe tener al menos ${minLength} caracteres.`
+        `The sprint name must be at least ${minLength} characters.`
       );
       return false;
     }
@@ -66,7 +68,7 @@ const SprintPlanning = ({ navigation }) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (startDate < today) {
+    if (startDate <= today) {
       setErrorMessage("The start date cannot be in the past.");
       return false;
     }
@@ -105,7 +107,8 @@ const SprintPlanning = ({ navigation }) => {
           endDate: endDate,
           projectId: selectedProjectId,
         });
-        Alert.alert("Sprint creado exitosamente");
+        setSucessMessage("Sprint created successfully")
+        setSucessModal(true)
         setSprintName("");
         setStartDate(new Date());
         setEndDate(new Date());
@@ -160,6 +163,7 @@ const SprintPlanning = ({ navigation }) => {
             onValueChange={(value) => setSelectedProjectId(value)}
             primaryColor={"green"}
             dropdownStyle={{ borderWidth: 0 }}
+            listControls={{ emptyListMessage: "No projects available" }}
           />
         </View>
 
@@ -241,7 +245,7 @@ const SprintPlanning = ({ navigation }) => {
             <Text style={styles.createButtonText}>Create Sprint</Text>
           )}
         </TouchableOpacity>
-        
+
         <Modal
           animationType="slide"
           transparent={true}
@@ -252,13 +256,34 @@ const SprintPlanning = ({ navigation }) => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>¡Attention!</Text>
+              <Text style={styles.modalTitle}>Alert</Text>
               <Text style={styles.modalText}>{errorMessage}</Text>
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={() => setErrorModal(false)}
               >
                 <Text style={styles.modalButtonText}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={sucessModal}
+          onRequestClose={() => {
+            setSucessModal(false);
+          }}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalTitle}>¡Sucess!</Text>
+              <Text style={styles.modalText}>{sucessMessage}</Text>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setSucessModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>

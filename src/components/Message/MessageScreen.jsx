@@ -41,7 +41,7 @@ const MessageScreen = ({ route, navigation }) => {
       const decoded = jwtDecode(token);
       setCurrentUser(decoded);
 
-      const newSocket = io(EXPO_PUBLIC_API_URL, {
+      const newSocket = io(EXPO_PRODUCTION_API_MESSAGE_URL, {
         query: { token },
         transports: ["websocket"],
       });

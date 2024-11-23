@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import {
   ALERT_TYPE,
@@ -80,12 +81,13 @@ const RegisterScreen = ({ navigation }) => {
 
       if (!valid) {
         setError(newErrors);
-        Dialog.show({
-          type: ALERT_TYPE.WARNING,
-          title: "Invalid Inputs",
-          textBody: "Please correct the highlighted errors.",
-          button: "close",
-        });
+        //Alert.alert("Invalid Inputs", "Please correct the highlighted errors");
+        Toast.show({
+          type: "info",
+          text1: "Invalid Inputs",
+          text2: "Please correct the highlighted errors",
+          autoHide: true
+        })
         return;
       }
 

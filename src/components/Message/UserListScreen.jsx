@@ -12,6 +12,7 @@ import { getInvitedUsers } from "../../api/endpoint";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Spinner } from "../Screens/ReportScreen";
+import { Link } from "@react-navigation/native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 
@@ -128,7 +129,12 @@ const UserListScreen = ({ navigation, route }) => {
         />
       ) : (
         <Text style={styles.textStyle}>
-          There are no users in this project yet. Invite one first
+          There are no users in this project yet.{" "}
+          <Link to={{ screen: "Projects", params: { showInviteModal: true } }}>
+            <Text style={{ color: "blue", textDecorationLine: "underline" }}>
+              Invite one first
+            </Text>
+          </Link>
         </Text>
       )}
     </View>

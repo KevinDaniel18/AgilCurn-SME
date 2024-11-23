@@ -235,28 +235,37 @@ const SprintList = () => {
             </TouchableOpacity>
           ))
         ) : (
-          <Text>There are no projects yet</Text>
+          <Text style={styles.emptyText}>There are no projects yet</Text>
         )}
       </View>
 
-      <Text style={styles.header}>Sprints:</Text>
-      {loading ? (
-        <ActivityIndicator size="small" color="black" style={styles.loader} />
-      ) : !projectId ? (
-        <Text style={styles.emptyText}>
-          Please select a project to see the sprints.
-        </Text>
-      ) : sprints.length > 0 ? (
-        <FlatList
-          data={sprints}
-          renderItem={renderSprint}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.sprintList}
-        />
-      ) : (
-        <Text style={styles.emptyText}>
-          There are no sprints assigned to this project.
-        </Text>
+      {projects && projects.length > 0 &&(
+        <>
+          <Text style={styles.header}>Sprints:</Text>
+
+          {loading ? (
+            <ActivityIndicator
+              size="small"
+              color="black"
+              style={styles.loader}
+            />
+          ) : !projectId ? (
+            <Text style={styles.emptyText}>
+              Please select a project to see the sprints.
+            </Text>
+          ) : sprints.length > 0 ? (
+            <FlatList
+              data={sprints}
+              renderItem={renderSprint}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.sprintList}
+            />
+          ) : (
+            <Text style={styles.emptyText}>
+              There are no sprints assigned to this project.
+            </Text>
+          )}
+        </>
       )}
 
       <Modal visible={modalVisible} animationType="fade">

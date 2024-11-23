@@ -16,7 +16,6 @@
     "@react-native-community/datetimepicker": "8.0.1",
     "@react-native-firebase/app": "^20.4.0",
     "@react-native-firebase/messaging": "^20.4.0",
-    "@react-native-google-signin/google-signin": "^13.1.0",
     "@react-native-masked-view/masked-view": "^0.3.1",
     "@react-navigation/bottom-tabs": "^6.5.16",
     "@react-navigation/drawer": "^6.7.2",

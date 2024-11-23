@@ -26,7 +26,7 @@ import { Feather } from "@expo/vector-icons";
 
 export const Spinner = () => (
   <View style={styles.spinnerContainer}>
-    <ActivityIndicator size="large" color="#4f9d9d" />
+    <ActivityIndicator size="large" color="black" />
   </View>
 );
 
@@ -376,7 +376,11 @@ const ReportScreen = () => {
                         style={{ flexDirection: "row", alignItems: "center" }}
                       >
                         <Image
-                          source={{ uri: profileImage }}
+                          source={
+                            profileImage
+                              ? { uri: profileImage }
+                              : require("../../../assets/defaultProfile.jpg")
+                          }
                           style={styles.profileImage}
                         />
                         <Text style={styles.userText}>{userName}</Text>

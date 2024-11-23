@@ -253,13 +253,21 @@ const BoardScreen = () => {
               }}
             >
               <Image
-                source={{ uri: item.creator?.profileImage }}
+                source={
+                  item.creator?.profileImage
+                    ? { uri: item.creator?.profileImage }
+                    : require("../../../assets/defaultProfile.jpg")
+                }
                 style={[styles.profileImage, { zIndex: 1 }]}
               />
 
               {item.assignee && (
                 <Image
-                  source={{ uri: item.assignee.profileImage }}
+                  source={
+                    item.assignee.profileImage
+                      ? { uri: item.assignee.profileImage }
+                      : require("../../../assets/defaultProfile.jpg")
+                  }
                   style={[styles.profileImage, { marginLeft: -20, zIndex: 0 }]}
                 />
               )}
@@ -376,7 +384,7 @@ const BoardScreen = () => {
       >
         {selectedProjectId ? (
           <>
-            {isLoading ? (
+            {isLoading && !refreshing ? (
               <ActivityIndicator
                 size="large"
                 color="black"

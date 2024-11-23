@@ -63,7 +63,7 @@ const CreateProjects = () => {
     const minLength = 3;
     if (projectName.trim().length < minLength) {
       setErrorMessage(
-        `El nombre del proyecto debe tener al menos ${minLength} caracteres.`
+        `The project name must be at least ${minLength} characters.`
       );
       return false;
     }
@@ -228,7 +228,7 @@ const CreateProjects = () => {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>¡Atención!</Text>
+              <Text style={styles.modalTitle}>Alert</Text>
               <Text style={styles.modalText}>{errorMessage}</Text>
               <TouchableOpacity
                 style={styles.modalButton}

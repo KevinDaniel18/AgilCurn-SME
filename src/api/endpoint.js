@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EXPO_PRODUCTION_API_URL, EXPO_PUBLIC_API_URL } from "@env";
 
-const instance = axios.create({ baseURL: EXPO_PUBLIC_API_URL });
+const instance = axios.create({ baseURL: EXPO_PRODUCTION_API_URL });
 
 const getAuthToken = async () => {
   const token = await AsyncStorage.getItem("token");
@@ -89,8 +89,12 @@ export function leaveProjectFromAPI(projectId, userId) {
   });
 }
 
-export function inviteUserToProjects(projectId, userId, roleId) {
-  return instance.post(`/projects/${projectId}/invite`, { userId, roleId });
+export function inviteUserToProjects(projectId, roleId, userId, email) {
+  return instance.post(`/projects/${projectId}/invite`, {
+    roleId,
+    userId,
+    email,
+  });
 }
 
 export function getUserProjects(userId) {
