@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 import { fetchMessagesFromAPI } from "../../api/endpoint";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { EXPO_PRODUCTION_API_MESSAGE_URL, EXPO_PUBLIC_API_URL } from "@env";
+import { EXPO_PRODUCTION_API_URL } from "@env";
 import { Spinner } from "../Screens/ReportScreen";
 
 const MessageScreen = ({ route, navigation }) => {
@@ -41,7 +41,7 @@ const MessageScreen = ({ route, navigation }) => {
       const decoded = jwtDecode(token);
       setCurrentUser(decoded);
 
-      const newSocket = io(EXPO_PRODUCTION_API_MESSAGE_URL, {
+      const newSocket = io(EXPO_PRODUCTION_API_URL, {
         query: { token },
         transports: ["websocket"],
       });
@@ -163,7 +163,7 @@ const MessageScreen = ({ route, navigation }) => {
   };
 
   const handleReceiveMessage = async (newMessage) => {
-    console.log("mensaje recibido", newMessage)
+    console.log("mensaje recibido", newMessage);
     const formattedNewMessage = {
       ...newMessage,
       formattedTime: formatMessageTime(newMessage.createdAt),

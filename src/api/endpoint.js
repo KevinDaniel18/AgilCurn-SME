@@ -1,6 +1,6 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { EXPO_PRODUCTION_API_URL, EXPO_PUBLIC_API_URL } from "@env";
+import { EXPO_PRODUCTION_API_URL} from "@env";
 
 const instance = axios.create({ baseURL: EXPO_PRODUCTION_API_URL });
 
@@ -36,7 +36,7 @@ export async function loginUser(email, password) {
     await AsyncStorage.setItem("userName", fullname.toString());
     return res.data;
   } catch (error) {
-    console.log("error papuh", error);
+    console.log("error login user", error);
   }
 }
 

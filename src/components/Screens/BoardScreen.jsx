@@ -16,6 +16,8 @@ import {
   ScrollView,
 } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getTasks, updateTask } from "../../api/endpoint";
 import moment from "moment/moment";
@@ -307,32 +309,54 @@ const BoardScreen = () => {
               </Text>
             )}
             <View style={styles.buttonContainer}>
-              <Button
-                title="TO DO"
-                onPress={() =>
-                  !isSprintOver &&
-                  updateTaskStatus(task.id, "TODO", task.status)
-                }
-                disabled={isSprintOver}
-              />
-              <Button
-                title="In Progress"
-                onPress={() =>
-                  !isSprintOver &&
-                  updateTaskStatus(task.id, "IN_PROGRESS", task.status)
-                }
-                color="#f4a261"
-                disabled={isSprintOver}
-              />
-              <Button
-                title="Done"
-                onPress={() =>
-                  !isSprintOver &&
-                  updateTaskStatus(task.id, "DONE", task.status)
-                }
-                color="#2a9d8f"
-                disabled={isSprintOver}
-              />
+              <View style={{ alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    !isSprintOver &&
+                    updateTaskStatus(task.id, "TODO", task.status)
+                  }
+                  disabled={isSprintOver}
+                >
+                  <MaterialIcons
+                    name="check-box-outline-blank"
+                    size={30}
+                    color="black"
+                  />
+                </TouchableOpacity>
+                <Text style={{ fontSize: 12, color: "#a7a7a7" }}>To do</Text>
+              </View>
+
+              <View style={{ alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    !isSprintOver &&
+                    updateTaskStatus(task.id, "IN_PROGRESS", task.status)
+                  }
+                  disabled={isSprintOver}
+                >
+                  <MaterialCommunityIcons
+                    name="progress-clock"
+                    size={30}
+                    color="#f4a261"
+                  />
+                </TouchableOpacity>
+                <Text style={{ fontSize: 12, color: "#a7a7a7" }}>
+                  In progress
+                </Text>
+              </View>
+
+              <View style={{ alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    !isSprintOver &&
+                    updateTaskStatus(task.id, "DONE", task.status)
+                  }
+                  disabled={isSprintOver}
+                >
+                  <MaterialIcons name="check-box" size={30} color="#2a9d8f" />
+                </TouchableOpacity>
+                <Text style={{ fontSize: 12, color: "#a7a7a7" }}>Done</Text>
+              </View>
             </View>
           </View>
         );

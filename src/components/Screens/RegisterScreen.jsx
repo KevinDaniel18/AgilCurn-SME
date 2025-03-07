@@ -6,11 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import {
-  ALERT_TYPE,
-  Dialog,
   AlertNotificationRoot,
 } from "react-native-alert-notification";
 import Toast from "react-native-toast-message";

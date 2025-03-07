@@ -70,6 +70,7 @@ const ProjectNavigation = () => {
         component={UserInfo}
         options={{
           title: "Info",
+          headerShown: false
         }}
       />
       <Stack.Screen

@@ -12,7 +12,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUserById } from "../../api/endpoint";
 import SprintPlanning from "../Screens/SprintPlanning";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import MeetScreen from "../Screens/MeetScreen";
 
 const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
