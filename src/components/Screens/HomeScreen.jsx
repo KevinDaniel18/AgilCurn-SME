@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePushNotifications } from "../setupNotifications";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Spinner } from "./ReportScreen";
+import moment from "moment/moment";
 
 const HomeScreen = ({ navigation }) => {
   const { projects, setProjects } = useProject();
@@ -143,6 +144,14 @@ const HomeScreen = ({ navigation }) => {
     });
   }, [progressValues]);
 
+  function projectOver(project) {
+    const isProjectOver = project
+      ? moment().isAfter(moment(project.endDate))
+      : false;
+
+    return isProjectOver;
+  }
+
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#ffffff" />
@@ -193,28 +202,34 @@ const HomeScreen = ({ navigation }) => {
                 }}
               >
                 <Text style={styles.projectName}>{project.projectName}</Text>
-                <Text style={styles.endDate}>
-                  Start Date:{" "}
-                  {project.startDate
-                    ? project.startDate.toLocaleDateString()
-                    : "Unknown"}{" "}
-                  - End Date:{" "}
-                  {project.endDate
-                    ? project.endDate.toLocaleDateString()
-                    : "Unknown"}
-                </Text>
+                {projectOver(project) ? (
+                  <Text style={styles.projectEnded}>
+                    The project has ended.
+                  </Text>
+                ) : (
+                  <Text style={styles.endDate}>
+                    Start Date:{" "}
+                    {project.startDate
+                      ? project.startDate.toLocaleDateString()
+                      : "Unknown"}{" "}
+                    - End Date:{" "}
+                    {project.endDate
+                      ? project.endDate.toLocaleDateString()
+                      : "Unknown"}
+                  </Text>
+                )}
 
                 <Progress.Bar
                   progress={animatedProgressValues[project.id] || 0}
                   width={300}
-                  color="#007AFF"
+                  color={projectOver(project) ? "#72bf61" : "#007AFF"}
                   unfilledColor="#dddddd"
                   borderColor="transparent"
                   borderRadius={5}
                   height={20}
                 />
 
-                {bottleneckCounts[project.id] > 0 && (
+                {bottleneckCounts[project.id] > 0 && !projectOver(project) && (
                   <View style={styles.notificationIconContainer}>
                     <Ionicons name="notifications" size={24} color="red" />
                     <Text style={styles.notificationText}>
@@ -290,6 +305,11 @@ const styles = StyleSheet.create({
   notificationText: {
     marginLeft: 5,
     color: "red",
+    fontWeight: "bold",
+  },
+  projectEnded: {
+    color: "red",
+    marginBottom: 10,
     fontWeight: "bold",
   },
 });

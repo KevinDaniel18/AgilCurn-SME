@@ -65,6 +65,8 @@ const ReportScreen = () => {
 
         const bottlenecksResponse = await getBottlenecks();
         setBottlenecks(bottlenecksResponse.data);
+        console.log(bottlenecksResponse.data);
+        console.log("project id", projectId);
       } catch (error) {
         console.error("Error fetching reports:", error);
       } finally {
@@ -161,7 +163,11 @@ const ReportScreen = () => {
     "Days in Progress",
   ];
 
-  const tableData = bottlenecks?.map((bottleneck) => [
+  const filteredBottlenecks = bottlenecks?.filter(
+    (b) => b.projectId === projectId
+  );
+
+  const tableData = filteredBottlenecks?.map((bottleneck) => [
     bottleneck.taskId,
     bottleneck.taskTitle,
     bottleneck.projectName,
@@ -311,7 +317,7 @@ const ReportScreen = () => {
         </View>
         {isLoading ? (
           <Spinner />
-        ) : bottlenecks?.length === 0 ? (
+        ) : filteredBottlenecks?.length === 0 ? (
           <Text style={{ color: "gray", textAlign: "justify" }}>
             No bottlenecks were found.
           </Text>

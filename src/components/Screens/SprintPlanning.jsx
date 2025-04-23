@@ -17,6 +17,9 @@ import { TouchableOpacity } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { LinearGradient } from "expo-linear-gradient";
+import moment from "moment/moment";
+import SuccessModal from "../modal/SuccesModal";
+import AlerModal from "../modal/AlertModal";
 
 const SprintPlanning = ({ navigation }) => {
   const [sprintName, setSprintName] = useState("");
@@ -36,7 +39,11 @@ const SprintPlanning = ({ navigation }) => {
     (project) => project.id === selectedProjectId
   );
 
-  const projectOptions = projects.map((project) => ({
+  const ongoingProjects = projects.filter((project) =>
+    project ? moment().isBefore(moment(project.endDate)) : false
+  );
+
+  const projectOptions = ongoingProjects.map((project) => ({
     label: project.projectName,
     value: project.id,
   }));
@@ -107,8 +114,8 @@ const SprintPlanning = ({ navigation }) => {
           endDate: endDate,
           projectId: selectedProjectId,
         });
-        setSucessMessage("Sprint created successfully")
-        setSucessModal(true)
+        setSucessMessage("Sprint created successfully");
+        setSucessModal(true);
         setSprintName("");
         setStartDate(new Date());
         setEndDate(new Date());
@@ -206,6 +213,10 @@ const SprintPlanning = ({ navigation }) => {
             mode="date"
             display="default"
             onChange={onChangeStartDate}
+            minimumDate={new Date()}
+            maximumDate={
+              selectedProject ? new Date(selectedProject.endDate) : undefined
+            }
           />
         )}
 
@@ -231,6 +242,10 @@ const SprintPlanning = ({ navigation }) => {
             mode="date"
             display="default"
             onChange={onChangeEndDate}
+            minimumDate={new Date()}
+            maximumDate={
+              selectedProject ? new Date(selectedProject.endDate) : undefined
+            }
           />
         )}
 
@@ -246,48 +261,16 @@ const SprintPlanning = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
-        <Modal
-          animationType="slide"
-          transparent={true}
+        <AlerModal
           visible={errorModal}
-          onRequestClose={() => {
-            setErrorModal(false);
-          }}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>Alert</Text>
-              <Text style={styles.modalText}>{errorMessage}</Text>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setErrorModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Cerrar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-        <Modal
-          animationType="slide"
-          transparent={true}
+          onClose={() => setErrorModal(false)}
+          message={errorMessage}
+        />
+        <SuccessModal
           visible={sucessModal}
-          onRequestClose={() => {
-            setSucessModal(false);
-          }}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>¡Sucess!</Text>
-              <Text style={styles.modalText}>{sucessMessage}</Text>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setSucessModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+          onClose={() => setSucessModal(false)}
+          message={sucessMessage}
+        />
       </View>
     </ScrollView>
   );

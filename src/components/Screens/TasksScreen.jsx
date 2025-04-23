@@ -31,6 +31,7 @@ import ProjectSelector from "../ProjectSelector";
 import SprintSelector from "../SprintSelector";
 import DropdownSelect from "react-native-input-select";
 import Toast from "react-native-toast-message";
+import moment from "moment/moment";
 
 const TasksScreen = ({ navigation }) => {
   const [task, setTask] = useState("");
@@ -51,7 +52,11 @@ const TasksScreen = ({ navigation }) => {
   const [isSprintSectionVisible, setIsSprintSectionVisible] = useState(false);
   const { projects } = useProject();
 
-  const projectOptions = projects.map((project) => ({
+  const ongoingProjects = projects.filter((project) =>
+    project ? moment().isBefore(moment(project.endDate)) : false
+  );
+
+  const projectOptions = ongoingProjects.map((project) => ({
     label: project.projectName,
     value: project.id,
   }));

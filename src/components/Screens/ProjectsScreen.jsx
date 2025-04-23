@@ -20,6 +20,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import DropdownSelect from "react-native-input-select";
 import { useRoute } from "@react-navigation/native";
+import InviteModal from "../modal/InviteModal";
+import DeleteModal from "../modal/DeleteModal";
 
 const ProjectsScreen = ({ navigation }) => {
   const { projects, deleteProject, leaveProject } = useProject();
@@ -207,6 +209,21 @@ const ProjectsScreen = ({ navigation }) => {
     });
   }
 
+  function navigateToEditProject(index) {
+    const projectId = projects[index].id;
+    const projectName = projects[index].projectName;
+    const projectStartDate = projects[index].startDate;
+    const projectEndDate = projects[index].endDate;
+    const creatorId = projects[index].creatorId;
+    navigation.navigate("EditProject", {
+      projectId,
+      projectName,
+      projectStartDate,
+      projectEndDate,
+      creatorId,
+    });
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -219,6 +236,13 @@ const ProjectsScreen = ({ navigation }) => {
               <View key={index} style={styles.projectContainer}>
                 <View style={styles.projectInfo}>
                   <Text style={styles.projectName}>{project.projectName}</Text>
+                  {project.creatorId === userId && (
+                    <TouchableOpacity
+                      onPress={() => navigateToEditProject(index)}
+                    >
+                      <Feather name="edit" size={18} color="black" />
+                    </TouchableOpacity>
+                  )}
                 </View>
                 <View style={styles.buttonGroup}>
                   <TouchableOpacity
@@ -298,7 +322,21 @@ const ProjectsScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       {/* Delete/Leave Modal */}
-      <Modal
+
+      <DeleteModal
+        visible={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setShowSuccessToast(false);
+        }}
+        selectedIndex={selectedIndex}
+        projects={projects}
+        userId={userId}
+        confirmDeleteProject={confirmDeleteProject}
+        confirmLeaveProject={confirmLeaveProject}
+      />
+
+      {/* <Modal
         animationType="slide"
         transparent={true}
         visible={showModal}
@@ -347,68 +385,19 @@ const ProjectsScreen = ({ navigation }) => {
             </View>
           </View>
         </View>
-      </Modal>
+      </Modal> */}
 
       {/* Invite Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
+      <InviteModal
         visible={showInviteModal}
-        onRequestClose={() => setShowInviteModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <Toast />
-          <View style={styles.modalContent}>
-            <Text style={styles.modalText}>
-              Enter User ID or Email to invite:
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={invitedUser.trim()}
-              onChangeText={setInvitedUser}
-            />
-            <DropdownSelect
-              label="Role"
-              placeholder="Select an option..."
-              options={[
-                { label: "Product Owner", value: 1 },
-                { label: "Scrum Master", value: 2 },
-                { label: "Developer/Invited", value: 3 },
-              ]}
-              selectedValue={roleId}
-              onValueChange={(value) => setRoleId(value)}
-              primaryColor={"green"}
-              dropdownStyle={{ borderWidth: 0 }}
-            />
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#007AFF" }]}
-                onPress={confirmInviteUser}
-                disabled={!invitedUser.trim() || loading}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text
-                    style={[
-                      styles.modalButtonText,
-                      { opacity: invitedUser.trim() ? 1 : 0.5 },
-                    ]}
-                  >
-                    Invite
-                  </Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#E5E5E5" }]}
-                onPress={() => setShowInviteModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowInviteModal(false)}
+        invitedUser={invitedUser}
+        setInvitedUser={setInvitedUser}
+        roleId={roleId}
+        setRoleId={setRoleId}
+        loading={loading}
+        confirmInviteUser={confirmInviteUser}
+      />
     </SafeAreaView>
   );
 };
@@ -444,6 +433,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   projectInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 10,
   },
   projectName: {

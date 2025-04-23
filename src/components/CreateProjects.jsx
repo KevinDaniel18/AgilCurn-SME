@@ -18,6 +18,7 @@ import { useProject } from "./StoreProjects/ProjectContext";
 import { postProjects } from "../api/endpoint";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AlerModal from "./modal/AlertModal";
 
 const CreateProjects = () => {
   const [projectName, setProjectName] = useState("");
@@ -217,29 +218,12 @@ const CreateProjects = () => {
             <Text style={styles.createButtonText}>Confirm and create</Text>
           )}
         </TouchableOpacity>
-
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={errorModal}
-          onRequestClose={() => {
-            setErrorModal(false);
-          }}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>Alert</Text>
-              <Text style={styles.modalText}>{errorMessage}</Text>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setErrorModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Cerrar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </View>
+      <AlerModal
+        visible={errorModal}
+        onClose={() => setErrorModal(false)}
+        message={errorMessage}
+      />
     </AlertNotificationRoot>
   );
 };

@@ -13,6 +13,7 @@ import ReportScreen from "../Screens/ReportScreen";
 import AttachDocuments from "../Screens/AttachDocuments";
 import TaskList from "../Screens/TaskList";
 import SprintList from "../Screens/SprintList";
+import EditProject from "../Screens/EditProject";
 
 const Stack = createStackNavigator();
 
@@ -57,7 +58,7 @@ const ProjectNavigation = () => {
       <Stack.Screen
         name="UserListScreen"
         component={UserListScreen}
-        options={{ title: "Chats" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen name="Account" component={Account} />
       <Stack.Screen
@@ -70,7 +71,7 @@ const ProjectNavigation = () => {
         component={UserInfo}
         options={{
           title: "Info",
-          headerShown: false
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -81,7 +82,7 @@ const ProjectNavigation = () => {
       <Stack.Screen
         name="AttachDocuments"
         component={AttachDocuments}
-        options={{ title: "Documents" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TaskList"
@@ -92,6 +93,11 @@ const ProjectNavigation = () => {
         name="SprintList"
         component={SprintList}
         options={{ title: "Sprint List" }}
+      />
+      <Stack.Screen
+        name="EditProject"
+        component={EditProject}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

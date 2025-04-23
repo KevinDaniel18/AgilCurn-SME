@@ -5,6 +5,7 @@ import {
   getUserById,
   leaveProjectFromAPI,
   userProfileImage,
+  updateProject,
 } from "../../api/endpoint";
 
 const ProjectContext = createContext();
@@ -44,8 +45,6 @@ export const ProjectProvider = ({ children }) => {
       setProfileImage(res.data.profileImage);
     }
   };
-;
-
   const saveProfileImageToStorage = async (imageUri) => {
     try {
       const userId = await AsyncStorage.getItem("userId");
@@ -66,13 +65,44 @@ export const ProjectProvider = ({ children }) => {
   };
 
   const addProject = async (project) => {
-    if (!project.id) {
-      return;
-    }
+    if (!project.id) return;
 
-    const updatedProjects = [...projects, project];
+    const formattedProject = {
+      ...project,
+      startDate: new Date(project.startDate),
+      endDate: new Date(project.endDate),
+    };
+
+    const updatedProjects = [...projects, formattedProject];
     setProjects(updatedProjects);
     await saveProjectsToStorage(updatedProjects);
+  };
+
+  const updateProjectById = async (projectId, updatedData) => {
+    try {
+      const response = await updateProject(projectId, updatedData);
+      console.log("Respuesta del backend:", response.data);
+      const updatedProject = {
+        ...response.data,
+        startDate: new Date(response.data.startDate),
+        endDate: new Date(response.data.endDate),
+      };
+
+      const updatedProjects = projects.map((project) =>
+        project.id === projectId ? { ...project, ...updatedProject } : project
+      );
+
+      setProjects(updatedProjects);
+      await saveProjectsToStorage(updatedProjects);
+      return updatedProject;
+    } catch (error) {
+      console.error(
+        "Error updating project:",
+        error?.response?.data || error?.message || error
+      );
+
+      throw error;
+    }
   };
 
   const deleteProject = async (index) => {
@@ -121,6 +151,7 @@ export const ProjectProvider = ({ children }) => {
         leaveProject,
         profileImage,
         updateProfileImage,
+        updateProjectById,
       }}
     >
       {children}

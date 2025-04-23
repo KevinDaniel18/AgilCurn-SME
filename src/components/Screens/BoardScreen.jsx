@@ -292,6 +292,10 @@ const BoardScreen = () => {
       ? moment().isAfter(moment(task.sprint.endDate))
       : false;
 
+    const isProjectOver = task.project
+      ? moment().isAfter(moment(task.project.endDate))
+      : false;
+
     if (userRole) {
       const { roleId } = userRole;
 
@@ -303,61 +307,66 @@ const BoardScreen = () => {
       ) {
         return (
           <View>
-            {isSprintOver && (
+            {isProjectOver ? (
+              <Text style={styles.sprintOverMessage}>
+                You cannot modify this task because its project has ended.
+              </Text>
+            ) : isSprintOver ? (
               <Text style={styles.sprintOverMessage}>
                 The sprint for this task has ended.
               </Text>
+            ) : (
+              <View style={styles.buttonContainer}>
+                <View style={{ alignItems: "center" }}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      !isSprintOver &&
+                      updateTaskStatus(task.id, "TODO", task.status)
+                    }
+                    disabled={isSprintOver}
+                  >
+                    <MaterialIcons
+                      name="check-box-outline-blank"
+                      size={30}
+                      color="black"
+                    />
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: 12, color: "#a7a7a7" }}>To do</Text>
+                </View>
+
+                <View style={{ alignItems: "center" }}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      !isSprintOver &&
+                      updateTaskStatus(task.id, "IN_PROGRESS", task.status)
+                    }
+                    disabled={isSprintOver}
+                  >
+                    <MaterialCommunityIcons
+                      name="progress-clock"
+                      size={30}
+                      color="#f4a261"
+                    />
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: 12, color: "#a7a7a7" }}>
+                    In progress
+                  </Text>
+                </View>
+
+                <View style={{ alignItems: "center" }}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      !isSprintOver &&
+                      updateTaskStatus(task.id, "DONE", task.status)
+                    }
+                    disabled={isSprintOver}
+                  >
+                    <MaterialIcons name="check-box" size={30} color="#2a9d8f" />
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: 12, color: "#a7a7a7" }}>Done</Text>
+                </View>
+              </View>
             )}
-            <View style={styles.buttonContainer}>
-              <View style={{ alignItems: "center" }}>
-                <TouchableOpacity
-                  onPress={() =>
-                    !isSprintOver &&
-                    updateTaskStatus(task.id, "TODO", task.status)
-                  }
-                  disabled={isSprintOver}
-                >
-                  <MaterialIcons
-                    name="check-box-outline-blank"
-                    size={30}
-                    color="black"
-                  />
-                </TouchableOpacity>
-                <Text style={{ fontSize: 12, color: "#a7a7a7" }}>To do</Text>
-              </View>
-
-              <View style={{ alignItems: "center" }}>
-                <TouchableOpacity
-                  onPress={() =>
-                    !isSprintOver &&
-                    updateTaskStatus(task.id, "IN_PROGRESS", task.status)
-                  }
-                  disabled={isSprintOver}
-                >
-                  <MaterialCommunityIcons
-                    name="progress-clock"
-                    size={30}
-                    color="#f4a261"
-                  />
-                </TouchableOpacity>
-                <Text style={{ fontSize: 12, color: "#a7a7a7" }}>
-                  In progress
-                </Text>
-              </View>
-
-              <View style={{ alignItems: "center" }}>
-                <TouchableOpacity
-                  onPress={() =>
-                    !isSprintOver &&
-                    updateTaskStatus(task.id, "DONE", task.status)
-                  }
-                  disabled={isSprintOver}
-                >
-                  <MaterialIcons name="check-box" size={30} color="#2a9d8f" />
-                </TouchableOpacity>
-                <Text style={{ fontSize: 12, color: "#a7a7a7" }}>Done</Text>
-              </View>
-            </View>
           </View>
         );
       }
@@ -548,7 +557,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   sprintOverMessage: {
-    color: "red",
+    color: "#fe301c",
     marginBottom: 10,
     fontWeight: "bold",
   },

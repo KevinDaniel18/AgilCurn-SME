@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import { useNavigation } from "@react-navigation/native";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -17,6 +18,7 @@ export const usePushNotifications = () => {
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
   const responseListener = useRef();
+  const navigation = useNavigation();
 
   async function registerForPushNotificationsAsync() {
     let token = null;
@@ -57,6 +59,44 @@ export const usePushNotifications = () => {
     return token;
   }
 
+  const handleNotificationResponse = (data) => {
+    if (!data?.type) return;
+
+    switch (data.type) {
+      case "message":
+        if (data.senderId && data.senderName) {
+          const user = {
+            id: data.senderId,
+            fullname: data.senderName,
+          };
+
+          navigation.navigate("MessageScreen", {
+            selectedUser: user,
+          });
+        }
+        break;
+
+      case "report":
+        if (
+          data.projectId &&
+          data.projectName &&
+          data.startDate &&
+          data.endDate
+        ) {
+          navigation.navigate("ReportScreen", {
+            projectId: data.projectId,
+            projectName: data.projectName,
+            startDate: data.startDate,
+            endDate: data.endDate,
+          });
+        }
+        break;
+
+      default:
+        console.log("Tipo de notificación no manejado:", data.type);
+    }
+  };
+
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
       setExpoPushToken(token);
@@ -70,6 +110,8 @@ export const usePushNotifications = () => {
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
         console.log(response);
+        const data = response.notification.request.content.data;
+        handleNotificationResponse(data);
       });
 
     return () => {

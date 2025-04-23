@@ -37,7 +37,6 @@ const TaskList = () => {
       setLoading(true);
       const res = await getAllTasks();
       setCurrentTasks(res.data);
-
       const anims = {};
       res.data.forEach((task) => {
         anims[task.id] = new Animated.Value(1);
@@ -112,7 +111,7 @@ const TaskList = () => {
   };
 
   return (
-    <View style={{ padding: 20, backgroundColor: "#F0F0F5", }}>
+    <View style={{ padding: 20, backgroundColor: "#F0F0F5" }}>
       {loading ? (
         <ActivityIndicator size="large" color="black" />
       ) : currentTasks.length > 0 ? (
@@ -129,16 +128,35 @@ const TaskList = () => {
             >
               <View style={styles.taskContainer}>
                 <View style={styles.taskDetails}>
-                  <Text style={styles.taskTitle}>{item.title}</Text>
-                  <Text style={styles.taskDetail}>
-                    Project: {item.project.projectName}
-                  </Text>
-                  <Text style={styles.taskDetail}>
-                    Description: {item.description}
-                  </Text>
-                  <Text style={styles.taskDetail}>
-                    Assignee ID: {item.assigneeId}
-                  </Text>
+                  {item.title && (
+                    <Text style={[styles.taskTitle, { marginBottom: 10 }]}>
+                      {item.title}
+                    </Text>
+                  )}
+
+                  {item.project.projectName && (
+                    <Text style={styles.taskDetail}>
+                      Project: {item.project.projectName}
+                    </Text>
+                  )}
+
+                  {item.creator.fullname && (
+                    <Text style={styles.taskDetail}>
+                      Creator: {item.creator.fullname}
+                    </Text>
+                  )}
+
+                  {item.assignee && (
+                    <Text style={styles.taskDetail}>
+                      Assigned: {item.assignee.fullname}
+                    </Text>
+                  )}
+
+                  {item.description && (
+                    <Text style={styles.taskDetail}>
+                      Description: {item.description}
+                    </Text>
+                  )}
                 </View>
                 {(item.creatorId === userId ||
                   item.project.creatorId === userId) && (

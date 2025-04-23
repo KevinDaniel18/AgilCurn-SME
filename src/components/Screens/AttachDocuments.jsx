@@ -21,11 +21,11 @@ import {
   deleteDocument,
   getDocumentDownloadUrl,
 } from "../../api/endpoint";
-import Feather from "@expo/vector-icons/Feather";
+import { Feather, AntDesign } from "@expo/vector-icons";
 import { Spinner } from "./ReportScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const AttachDocuments = ({ route }) => {
+const AttachDocuments = ({ route, navigation }) => {
   const { projectId, projectName, creatorId } = route.params;
   const [document, setDocument] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -172,28 +172,39 @@ const AttachDocuments = ({ route }) => {
 
   const renderDocument = ({ item }) => (
     <View style={styles.documentItem}>
-      <View style={{ flexDirection: "column", flex: 1 }}>
-        <Text style={styles.documentName}>{item.fileName}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 }}>
+      <View style={styles.documentInfo}>
+        <Text
+          style={styles.documentName}
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
+          {item.fileName}
+        </Text>
+        <View style={styles.uploaderContainer}>
           {item.uploader.profileImage && (
             <Image
               source={{ uri: item.uploader.profileImage }}
               style={styles.profileImage}
             />
           )}
-          <Text style={{ color: "#666" }}>{item.uploader.fullname}</Text>
+          <Text style={styles.uploaderName}>{item.uploader.fullname}</Text>
         </View>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <TouchableOpacity onPress={() => handleDownloadDocument(item)}>
-          <Feather name="download" size={24} color="black" />
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => handleDownloadDocument(item)}
+        >
+          <Feather name="download" size={22} color="#4F46E5" />
         </TouchableOpacity>
+
         {(creatorId === userId || item.uploaderId === userId) && (
           <TouchableOpacity
+            style={styles.iconButton}
             onPress={() => handleDeleteDocument(item.id, item.uploaderId)}
           >
-            <Feather name="trash-2" size={24} color="red" />
+            <Feather name="trash-2" size={22} color="#EF4444" />
           </TouchableOpacity>
         )}
       </View>
@@ -202,55 +213,109 @@ const AttachDocuments = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Attach Documents for {projectName}</Text>
-
-      <TouchableOpacity
-        style={styles.iconContainer}
-        onPress={handlePickDocument}
-      >
-        <Feather name="upload" size={50} color="black" />
-        <Text style={styles.iconText}>Pick a Document</Text>
-      </TouchableOpacity>
-
-      {loadingDocument && (
-        <View style={styles.progressBarContainer}>
-          <Animated.View
-            style={[styles.progressBar, { width: progressWidth }]}
-          />
+      <View style={styles.header}>
+        <View style={styles.normalHeader}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <AntDesign name="arrowleft" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <Text style={styles.titleHeader}>Attach Documents</Text>
+          <View style={{ width: 24 }} />
         </View>
-      )}
+      </View>
 
-      {document && !loadingDocument && (
-        <Text style={styles.documentText}>{document.name}</Text>
-      )}
-      {document && (
-        <TouchableOpacity
-          style={[
-            styles.uploadButton,
-            uploading ? styles.disabledButton : null,
-          ]}
-          onPress={handleUploadDocument}
-          disabled={uploading}
-        >
-          {uploading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.uploadButtonText}>Upload Document</Text>
+      <View style={{padding: 20, flex: 1}}>
+        <Text style={styles.title}>Documents for {projectName}</Text>
+
+        <View style={styles.uploadSection}>
+          <TouchableOpacity
+            style={styles.uploadContainer}
+            onPress={handlePickDocument}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconContainer}>
+              <Feather name="upload-cloud" size={40} color="#4F46E5" />
+            </View>
+            <Text style={styles.iconText}>Select Document</Text>
+          </TouchableOpacity>
+
+          {loadingDocument && (
+            <View style={styles.progressBarContainer}>
+              <Animated.View
+                style={[styles.progressBar, { width: progressWidth }]}
+              />
+            </View>
           )}
-        </TouchableOpacity>
-      )}
-      {loading ? (
-        <Spinner />
-      ) : documents.length > 0 ? (
-        <FlatList
-          data={documents}
-          keyExtractor={(item) => item.id.toString()}
-          style={styles.documentList}
-          renderItem={renderDocument}
-        />
-      ) : (
-        <Text style={styles.emptyList}>No documents uploaded yet.</Text>
-      )}
+
+          {document && !loadingDocument && (
+            <View style={styles.selectedDocContainer}>
+              <Feather
+                name="file"
+                size={18}
+                color="#4F46E5"
+                style={styles.fileIcon}
+              />
+              <Text
+                style={styles.documentText}
+                numberOfLines={1}
+                ellipsizeMode="middle"
+              >
+                {document.name}
+              </Text>
+            </View>
+          )}
+
+          {document && (
+            <TouchableOpacity
+              style={[
+                styles.uploadButton,
+                uploading ? styles.disabledButton : null,
+              ]}
+              onPress={handleUploadDocument}
+              disabled={uploading}
+              activeOpacity={0.8}
+            >
+              {uploading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <>
+                  <Feather
+                    name="upload"
+                    size={18}
+                    color="white"
+                    style={styles.buttonIcon}
+                  />
+                  <Text style={styles.uploadButtonText}>Upload</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.divider} />
+
+        <Text style={styles.sectionTitle}>Uploaded Documents</Text>
+
+        {loading ? (
+          <Spinner />
+        ) : documents.length > 0 ? (
+          <FlatList
+            data={documents}
+            keyExtractor={(item) => item.id.toString()}
+            style={styles.documentList}
+            renderItem={renderDocument}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Feather name="file-text" size={50} color="#D1D5DB" />
+            <Text style={styles.emptyList}>No documents uploaded yet</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -258,88 +323,212 @@ const AttachDocuments = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#f7f7f7",
+    backgroundColor: "#F9FAFB",
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    zIndex: 10,
+  },
+  normalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#F3F4F6",
+  },
+  titleHeader: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 24,
+    color: "#111827",
     textAlign: "center",
   },
-  iconContainer: {
-    alignItems: "center",
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+    color: "#374151",
+  },
+  uploadSection: {
     marginBottom: 20,
+  },
+  uploadContainer: {
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    borderStyle: "dashed",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#EEF2FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
   },
   iconText: {
-    marginTop: 10,
     fontSize: 16,
-    color: "#333",
+    fontWeight: "500",
+    color: "#4B5563",
   },
   progressBarContainer: {
-    width: "80%",
-    height: 10,
-    backgroundColor: "#e0e0e0",
-    borderRadius: 5,
+    width: "100%",
+    height: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 4,
     overflow: "hidden",
-    marginTop: 20,
-    alignSelf: "center",
-    marginBottom: 20,
+    marginTop: 16,
+    marginBottom: 16,
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#007bff",
+    backgroundColor: "#4F46E5",
+  },
+  selectedDocContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EEF2FF",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  fileIcon: {
+    marginRight: 8,
   },
   documentText: {
-    fontSize: 16,
-    marginBottom: 10,
-    textAlign: "center",
-    color: "#555",
-  },
-  disabledButton: {
-    backgroundColor: "#b0b0b0",
+    fontSize: 15,
+    flex: 1,
+    color: "#4B5563",
   },
   uploadButton: {
-    backgroundColor: "#007bff",
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: "#4F46E5",
+    padding: 14,
+    borderRadius: 8,
     alignItems: "center",
-    marginBottom: 20,
+    marginTop: 16,
+    flexDirection: "row",
+    justifyContent: "center",
+    shadowColor: "#4F46E5",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
   uploadButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+  },
+  disabledButton: {
+    backgroundColor: "#9CA3AF",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginVertical: 24,
   },
   documentList: {
-    marginTop: 20,
+    flex: 1,
+  },
+  listContent: {
+    paddingBottom: 20,
   },
   documentItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 15,
+    alignItems: "center",
+    padding: 16,
     backgroundColor: "#fff",
-    marginBottom: 10,
-    borderRadius: 10,
-    elevation: 3,
+    marginBottom: 12,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  documentInfo: {
+    flex: 1,
+    marginRight: 12,
   },
   documentName: {
-    flex: 1,
-    flexShrink: 1,
-    marginRight: 10,
     fontSize: 16,
-    color: "#333",
+    fontWeight: "500",
+    color: "#1F2937",
+    marginBottom: 8,
   },
-  emptyList: {
-    textAlign: "center",
-    color: "#555",
-    marginTop: 20,
+  uploaderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   profileImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  uploaderName: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginTop: 5,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 40,
+  },
+  emptyList: {
+    fontSize: 16,
+    color: "#9CA3AF",
+    marginTop: 12,
+  },
+  spinnerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 40,
   },
 });
 

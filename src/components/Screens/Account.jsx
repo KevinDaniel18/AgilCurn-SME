@@ -88,7 +88,7 @@ const Account = ({ navigation }) => {
       const fileType = uri.split(".").pop();
       try {
         setUploading(true);
-        const downloadURL = await uploadImage(uri, fileType);
+        const downloadURL = await uploadImage(uri, fileType, userId);
         setLocalProfileImage(downloadURL);
         updateProfileImage(downloadURL);
       } catch (error) {
@@ -100,11 +100,11 @@ const Account = ({ navigation }) => {
     }
   };
 
-  async function uploadImage(uri, fileType) {
+  async function uploadImage(uri, fileType, userId) {
     const res = await fetch(uri);
     const blob = await res.blob();
 
-    const storageRef = ref(storage, "Stuff/" + new Date().getTime());
+    const storageRef = ref(storage, `profilePictures/${userId}.${fileType}`);
     const uploadTask = uploadBytesResumable(storageRef, blob);
 
     return new Promise((resolve, reject) => {

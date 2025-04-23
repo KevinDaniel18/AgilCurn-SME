@@ -16,6 +16,7 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SplashScreen from "./src/components/Screens/SplashScreen";
 import { StatusBar } from "react-native";
+import { UserProvider } from "./src/components/UserContext/UserContext";
 
 const Stack = createStackNavigator();
 
@@ -27,7 +28,9 @@ export default function App() {
         <AuthProvider>
           <ProjectProvider>
             <NavigationContainer>
-              <AppNavigator />
+              <UserProvider>
+                <AppNavigator />
+              </UserProvider>
             </NavigationContainer>
           </ProjectProvider>
         </AuthProvider>

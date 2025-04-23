@@ -7,9 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import {
-  AlertNotificationRoot,
-} from "react-native-alert-notification";
+import { AlertNotificationRoot } from "react-native-alert-notification";
 import Toast from "react-native-toast-message";
 import { postUser } from "../../api/endpoint";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -83,8 +81,8 @@ const RegisterScreen = ({ navigation }) => {
           type: "info",
           text1: "Invalid Inputs",
           text2: "Please correct the highlighted errors",
-          autoHide: true
-        })
+          autoHide: true,
+        });
         return;
       }
 
@@ -110,6 +108,7 @@ const RegisterScreen = ({ navigation }) => {
         visibilityTime: 4000,
         autoHide: true,
       });
+      console.error(error);
     } finally {
       setLoading(false);
     }
