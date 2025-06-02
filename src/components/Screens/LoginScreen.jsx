@@ -1,231 +1,155 @@
-import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  TextInput,
   StyleSheet,
-  TouchableOpacity,
+  Text,
+  View,
   Image,
-  Alert,
-  BackHandler,
-  ActivityIndicator,
+  TouchableOpacity,
+  SafeAreaView,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  TouchableWithoutFeedback,
 } from "react-native";
-import Toast from "react-native-toast-message";
-import { loginUser } from "../../api/endpoint";
-import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../AuthContext/AuthContext";
-import Feather from "@expo/vector-icons/Feather";
+import { useState } from "react";
+import UserLoginScreen from "./UserLoginScreen";
+import AdminLoginScreen from "./AdminLoginScreen";
+import { Toast } from "react-native-toast-message/lib/src/Toast";
 
-const LoginScreen = ({ navigation }) => {
-  const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [loading, setIsLoading] = useState(false);
+export default function LoginScreen({ navigation }) {
+  const [activeScreen, setActiveScreen] = useState("user"); // "user" or "admin"
 
-  const navigate = useNavigation();
-
-  const handleLogin = async () => {
-    setIsLoading(true);
-    try {
-      if (!email.trim() || !password.trim()) {
-        Toast.show({
-          type: "info",
-          text1: "empty fields",
-          text2: "Please enter your information",
-          visibilityTime: 4000,
-          autoHide: true,
-        });
-        return;
-      }
-      const response = await loginUser(email, password);
-      console.log(response);
-
-      if (response.result && response.result.token) {
-        login(response.result.token);
-      } else {
-        Toast.show({
-          type: "error",
-          text1: "Failed login",
-          text2: "Por favor revisa tus credenciales",
-          visibilityTime: 4000,
-          autoHide: true,
-        });
-      }
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Failed login",
-        text2: "Data not found",
-        visibilityTime: 4000,
-        autoHide: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const toggleScreen = (screen) => {
+    setActiveScreen(screen);
   };
 
-  const navigateToRegister = () => {
-    navigation.navigate("Register");
+  const toast = (type, text1, text2, visibilityTime, autoHide) => {
+    Toast.show({
+      type,
+      text1,
+      text2,
+      visibilityTime,
+      autoHide,
+    });
   };
-
-  const navigateToForgotPassword = () => {
-    navigate.navigate("ForgotPass");
-  };
-
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
-  };
-
-  useEffect(() => {
-    const backAction = () => {
-      Alert.alert("Exit App", "Are you sure you want to exit?", [
-        {
-          text: "Cancel",
-          onPress: () => null,
-          style: "cancel",
-        },
-        { text: "Yes", onPress: () => BackHandler.exitApp() },
-      ]);
-      return true;
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-
-    return () => backHandler.remove();
-  }, []);
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require("../../../assets/agilcurn-logo.png")}
-        style={{ height: 80, width: 80, marginBottom: 30 }}
-      />
-
-      <View style={styles.inputView1}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          onChangeText={(text) => setEmail(text)}
-          value={email}
-          autoCapitalize="none"
-        />
-      </View>
-
-      <View style={styles.inputView}>
-        <TextInput
+    <SafeAreaView style={styles.container}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
           style={{ flex: 1 }}
-          placeholder="Password"
-          onChangeText={(text) => setPassword(text)}
-          value={password}
-          secureTextEntry={!passwordVisible}
-        />
-        <TouchableOpacity
-          onPress={togglePasswordVisibility}
-          style={styles.icon}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Feather
-            name={passwordVisible ? "eye-off" : "eye"}
-            size={20}
-            color="gray"
-          />
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity
-        onPress={navigateToForgotPassword}
-        style={styles.forgotPasswordText}
-      >
-        <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-      </TouchableOpacity>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../../assets/agilcurn-logo.png")}
+              style={styles.logo}
+            />
+          </View>
 
-      <View style={styles.actionContainer}>
-        <TouchableOpacity
-          onPress={handleLogin}
-          disabled={loading}
-          style={{ backgroundColor: "#2196F3", padding: 15, borderRadius: 10 }}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text
-              style={{
-                color: "white",
-                textAlign: "center",
-                fontWeight: "bold",
-              }}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                activeScreen === "user" && styles.activeTabButton,
+              ]}
+              onPress={() => toggleScreen("user")}
             >
-              Login
-            </Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity onPress={navigateToRegister}>
-          <Text style={styles.registerText}>
-            You do not have an account? Sign up here
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <Toast />
-    </View>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeScreen === "user" && styles.activeTabText,
+                ]}
+              >
+                Usuario
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                activeScreen === "admin" && styles.activeTabButton,
+              ]}
+              onPress={() => toggleScreen("admin")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeScreen === "admin" && styles.activeTabText,
+                ]}
+              >
+                Administrador
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.contentContainer}>
+            {activeScreen === "user" ? (
+              <UserLoginScreen navigation={navigation} toast={toast} />
+            ) : (
+              <AdminLoginScreen navigation={navigation} toast={toast} />
+            )}
+          </View>
+          <Toast />
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "white",
   },
-  title: {
-    fontSize: 30,
-    fontWeight: "bold",
+  logoContainer: {
+    alignItems: "center",
+    marginTop: 40,
     marginBottom: 20,
   },
-  inputView1: {
-    width: "80%",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 25,
-    padding: 15,
-    marginBottom: 10,
+  logo: {
+    height: 80,
+    width: 80,
+    marginBottom: 30,
   },
-  inputView: {
-    width: "80%",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 25,
-    padding: 15,
-    marginBottom: 10,
+  tabContainer: {
     flexDirection: "row",
-    alignItems: "center",
-  },
-  icon: {
-    padding: 5,
-  },
-  loginButton: {
-    width: "100%",
-    backgroundColor: "#4caf50",
+    marginHorizontal: 20,
     borderRadius: 10,
-    padding: 10,
+    overflow: "hidden",
+    marginBottom: 10,
+    backgroundColor: "#e0e0e0",
   },
-  forgotPasswordText: {
-    fontSize: 12,
-    marginTop: 0,
-    color: "#000",
-    alignSelf: "flex-end",
-    marginRight: 30,
-    fontWeight: "bold",
-    fontStyle: "italic",
+  tabButton: {
+    flex: 1,
+    paddingVertical: 15,
+    alignItems: "center",
+    backgroundColor: "#e0e0e0",
   },
-  registerText: {
-    color: "#29374a",
-    textDecorationLine: "underline",
-    marginTop: 15,
+  activeTabButton: {
+    backgroundColor: "#ff7b00", // Orange color
   },
-  actionContainer: {
-    marginTop: 80,
+  tabText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#555",
+  },
+  activeTabText: {
+    color: "white",
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: "white",
+    marginHorizontal: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    padding: 20,
+    marginBottom: 10,
   },
 });
-
-export default LoginScreen;

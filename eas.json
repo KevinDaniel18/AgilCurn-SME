@@ -9,7 +9,18 @@
       "distribution": "internal",
       "resourceClass": "medium",
       "env": {
-        "GOOGLE_SERVICES_JSON": "GOOGLE_SERVICES_JSON"
+        "GOOGLE_SERVICES_JSON": "GOOGLE_SERVICES_JSON",
+        "API_KEY": "API_KEY",
+        "AUTH_DOMAIN": "AUTH_DOMAIN",
+        "PROJECT_ID": "PROJECT_ID",
+        "STORAGE_BUCKET": "STORAGE_BUCKET",
+        "MESSAGING_SENDER_ID": "MESSAGING_SENDER_ID",
+        "APP_ID": "APP_ID",
+        "MEASUREMENT_ID": "MEASUREMENT_ID",
+        "EXPO_PRODUCTION_API_URL": "EXPO_PRODUCTION_API_URL",
+        "CLIENT_ID": "CLIENT_ID",
+        "CLUSTER": "CLUSTER",
+        "PUSHER_KEY": "PUSHER_KEY"
       }
     },
     "preview": {
@@ -18,7 +29,18 @@
         "resourceClass": "medium"
       },
       "env": {
-        "GOOGLE_SERVICES_JSON": "GOOGLE_SERVICES_JSON"
+        "GOOGLE_SERVICES_JSON": "GOOGLE_SERVICES_JSON",
+        "API_KEY": "API_KEY",
+        "AUTH_DOMAIN": "AUTH_DOMAIN",
+        "PROJECT_ID": "PROJECT_ID",
+        "STORAGE_BUCKET": "STORAGE_BUCKET",
+        "MESSAGING_SENDER_ID": "MESSAGING_SENDER_ID",
+        "APP_ID": "APP_ID",
+        "MEASUREMENT_ID": "MEASUREMENT_ID",
+        "EXPO_PRODUCTION_API_URL": "EXPO_PRODUCTION_API_URL",
+        "CLIENT_ID": "CLIENT_ID",
+        "CLUSTER": "CLUSTER",
+        "PUSHER_KEY": "PUSHER_KEY"
       }
     }
   },

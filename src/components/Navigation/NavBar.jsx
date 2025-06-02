@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { TouchableOpacity, Image, View, Text } from "react-native";
 import HomeScreen from "../Screens/HomeScreen";
 import ProjectsScreen from "../Screens/ProjectsScreen";
@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUserById } from "../../api/endpoint";
 import SprintPlanning from "../Screens/SprintPlanning";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import SupportScreen from "../Screens/SupportScreen";
 
 const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -155,6 +156,17 @@ const Navbar = ({ navigation }) => {
           options={{
             drawerIcon: () => {
               return <AntDesign name="calendar" size={24} color="black" />;
+            },
+          }}
+        />
+        <Drawer.Screen
+          name="Support"
+          component={SupportScreen}
+          options={{
+            drawerIcon: () => {
+              return (
+                <MaterialIcons name="contact-support" size={24} color="black" />
+              );
             },
           }}
         />

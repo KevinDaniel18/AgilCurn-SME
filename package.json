@@ -61,7 +61,8 @@
     "react-navigation": "^5.0.0",
     "react-router-native": "^6.24.1",
     "socket.io-client": "^4.7.5",
-    "victory-native": "^41.2.0"
+    "victory-native": "^41.2.0",
+    "expo-constants": "~16.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

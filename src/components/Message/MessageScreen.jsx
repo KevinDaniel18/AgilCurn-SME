@@ -13,8 +13,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 import { fetchMessagesFromAPI } from "../../api/endpoint";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { EXPO_PRODUCTION_API_URL } from "@env";
 import { Spinner } from "../Screens/ReportScreen";
+import config from "../../../config";
 
 const MessageScreen = ({ route, navigation }) => {
   const { selectedUser } = route.params;
@@ -41,7 +41,7 @@ const MessageScreen = ({ route, navigation }) => {
       const decoded = jwtDecode(token);
       setCurrentUser(decoded);
 
-      const newSocket = io(EXPO_PRODUCTION_API_URL, {
+      const newSocket = io(config.api.baseUrl, {
         query: { token },
         transports: ["websocket"],
       });

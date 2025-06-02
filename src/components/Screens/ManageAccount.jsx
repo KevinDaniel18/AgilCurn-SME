@@ -13,7 +13,7 @@ import { deleteAccountByEmailAndPassword } from "../../api/endpoint";
 import { useAuth } from "../AuthContext/AuthContext";
 import { recoverPassword } from "../../api/endpoint";
 import Feather from "@expo/vector-icons/Feather";
-import RenderModal from "../modal/renderModal";
+import RenderModal from "../modal/RenderModal";
 
 const ManageAccount = () => {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);

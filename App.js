@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SplashScreen from "./src/components/Screens/SplashScreen";
 import { StatusBar } from "react-native";
 import { UserProvider } from "./src/components/UserContext/UserContext";
+import AdminNavigator from "./src/components/Navigation/AdminNavigator";
 
 const Stack = createStackNavigator();
 
@@ -40,15 +41,19 @@ export default function App() {
 }
 
 const AppNavigator = () => {
-  const { isLoggedIn, loading } = useAuth();
+  const { isLoggedIn, loading, userType } = useAuth();
 
   if (loading) {
     return <SplashScreen />;
   }
 
+  if (isLoggedIn && userType === "admin") {
+    return <AdminNavigator />;
+  }
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isLoggedIn ? (
+      {isLoggedIn && userType === "user" ? (
         <Stack.Screen name="Root" component={ProjectNavigation} />
       ) : (
         <>

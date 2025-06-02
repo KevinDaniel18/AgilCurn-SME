@@ -1,8 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { EXPO_PRODUCTION_API_URL } from "@env";
+import config from "../../config";
 
-const instance = axios.create({ baseURL: EXPO_PRODUCTION_API_URL });
+const instance = axios.create({ baseURL: config.api.baseUrl });
+const adminInstance = axios.create({ baseURL: config.api.baseUrl });
 
 const getAuthToken = async () => {
   const token = await AsyncStorage.getItem("token");
@@ -12,6 +13,22 @@ const getAuthToken = async () => {
 instance.interceptors.request.use(
   async (config) => {
     const token = await getAuthToken();
+    if (token) {
+      config.headers.Authorization = token;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+const getAdminAuthToken = async () => {
+  const token = await AsyncStorage.getItem("adminToken");
+  return token ? `Bearer ${token}` : "";
+};
+
+adminInstance.interceptors.request.use(
+  async (config) => {
+    const token = await getAdminAuthToken();
     if (token) {
       config.headers.Authorization = token;
     }
@@ -259,4 +276,39 @@ export function removeTaskFromSprint(taskId) {
 
 export function deleteSprint(sprintId) {
   return instance.delete(`tasks/${sprintId}/delete-sprint`);
+}
+
+export function loginAdmin(admin) {
+  return instance.post("/admin/auth/login", admin);
+}
+
+export function createTicket(ticket) {
+  return instance.post("/support/create", ticket);
+}
+
+export function getAllTickets() {
+  return adminInstance.get("/admin/auth/support/all");
+}
+
+export function updateTicketStatus(id, status) {
+  return adminInstance.patch(`/admin/auth/support/${id}/status/${status}`);
+}
+
+export function respondToTicket(respond) {
+  return adminInstance.post("/admin/auth/support/respond", respond);
+}
+
+export function getResponsesByTicket(ticketId) {
+  return adminInstance.get(`/admin/auth/support/${ticketId}/responses`);
+}
+export function getResponsesByTicketUser(ticketId) {
+  return instance.get(`/support/${ticketId}/responses`);
+}
+
+export function respondToTicketUser(respond) {
+  return instance.post("/support/respond", respond);
+}
+
+export function getUserTickets() {
+  return instance.get("/support/my-tickets");
 }
